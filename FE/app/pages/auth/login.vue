@@ -1,11 +1,33 @@
 <script setup lang="ts">
-import { Coffee, User, Eye, EyeOff } from "lucide-vue-next";
+import { Coffee, Eye, EyeOff } from "lucide-vue-next";
+import { useAuth } from "../../composable/useAuth";
+
+definePageMeta({
+  layout: "auth",
+});
 
 useSeoMeta({
   title: "Login | Cafe Trefiko",
 });
 
 const showPassword = ref(false);
+const identifier = ref("");
+const password = ref("");
+
+const { login, isLoading, errorMessage, getLandingPathByRole } = useAuth();
+
+const handleLogin = async () => {
+  try {
+    const response = await login({
+      identifier: identifier.value,
+      password: password.value,
+    });
+
+    await navigateTo(getLandingPathByRole(response.user.role));
+  } catch {
+    // Error is handled by errorMessage from useAuth.
+  }
+};
 </script>
 
 <template>
@@ -17,14 +39,14 @@ const showPassword = ref(false);
       class="fixed inset-0 pointer-events-none z-0 opacity-5 overflow-hidden"
     >
       <div
-        class="absolute top-0 right-0 w-[500px] h-[500px] bg-primary rounded-full blur-[120px] -mr-64 -mt-64"
+        class="absolute top-0 right-0 w-125 h-125 bg-primary rounded-full blur-[120px] -mr-64 -mt-64"
       />
       <div
-        class="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary rounded-full blur-[100px] -ml-48 -mb-48"
+        class="absolute bottom-0 left-0 w-100 h-100 bg-primary rounded-full blur-[100px] -ml-48 -mb-48"
       />
     </div>
 
-    <div class="w-full max-w-[480px] space-y-8 relative z-10">
+    <div class="w-full max-w-120 space-y-8 relative z-10">
       <!-- Header -->
       <div class="flex flex-col items-center text-center space-y-2">
         <NuxtLink
@@ -39,11 +61,6 @@ const showPassword = ref(false);
           </h2>
         </NuxtLink>
 
-        <div
-          class="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-4"
-        >
-          <User :size="48" class="text-primary" />
-        </div>
         <h1
           class="text-slate-900 dark:text-slate-100 text-4xl font-black tracking-tight"
         >
@@ -58,17 +75,19 @@ const showPassword = ref(false);
       <div
         class="bg-white dark:bg-slate-900/50 p-8 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-6"
       >
-        <div class="space-y-4">
+        <form class="space-y-4" @submit.prevent="handleLogin">
           <label class="block">
             <span
               class="text-slate-700 dark:text-slate-300 text-sm font-semibold mb-2 block"
             >
-              Email or Username
+              Name, Email, or Username
             </span>
             <input
+              v-model="identifier"
               class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 text-base transition-all outline-none"
-              placeholder="name@example.com"
+              placeholder="Admin Trefiko / admin@trefiko.com"
               type="text"
+              required
             />
           </label>
 
@@ -87,8 +106,10 @@ const showPassword = ref(false);
             <div class="relative">
               <input
                 :type="showPassword ? 'text' : 'password'"
+                v-model="password"
                 class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 pr-12 text-base transition-all outline-none"
                 placeholder="Enter your password"
+                required
               />
               <button
                 type="button"
@@ -100,13 +121,19 @@ const showPassword = ref(false);
               </button>
             </div>
           </label>
-        </div>
 
-        <button
-          class="w-full bg-primary hover:bg-primary/90 text-slate-900 font-bold py-3.5 rounded-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
-        >
-          Login
-        </button>
+          <p v-if="errorMessage" class="text-sm text-red-500">
+            {{ errorMessage }}
+          </p>
+
+          <button
+            type="submit"
+            :disabled="isLoading"
+            class="w-full bg-primary hover:bg-primary/90 text-slate-900 font-bold py-3.5 rounded-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.98] disabled:opacity-60"
+          >
+            {{ isLoading ? "Loading..." : "Login" }}
+          </button>
+        </form>
       </div>
 
       <p class="text-center text-slate-600 dark:text-slate-400 text-sm">

@@ -7,7 +7,7 @@
       <span class="material-symbols-outlined text-slate-400">search</span>
       <input
         class="bg-transparent border-none focus:ring-0 text-sm w-64 placeholder:text-slate-400"
-        :placeholder="searchPlaceholder"
+        :placeholder="props.searchPlaceholder || 'Search...'"
         type="text"
       />
     </div>
@@ -23,42 +23,55 @@
       <div class="h-8 w-px bg-slate-200 dark:border-slate-800"></div>
       <div class="flex items-center gap-3">
         <div class="text-right">
-          <p class="text-sm font-bold">{{ userName }}</p>
-          <p class="text-xs text-slate-500">{{ userRole }}</p>
+          <p class="text-sm font-bold">{{ resolvedUserName }}</p>
+          <p class="text-xs text-slate-500">{{ resolvedUserRole }}</p>
         </div>
         <div
-          class="size-10 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden border-2 border-primary/20"
+          class="size-10 rounded-full bg-primary/15 text-primary border-2 border-primary/20 flex items-center justify-center"
         >
-          <img
-            class="w-full h-full object-cover"
-            :src="userImage"
-            :alt="userName"
-          />
+          <span class="text-sm font-black tracking-wide">{{
+            userInitials
+          }}</span>
         </div>
       </div>
     </div>
   </header>
 </template>
 
-<script setup>
-defineProps({
-  searchPlaceholder: {
-    type: String,
-    default: "Search...",
-  },
-  userName: {
-    type: String,
-    default: "Alex Rivera",
-  },
-  userRole: {
-    type: String,
-    default: "Store Manager",
-  },
-  userImage: {
-    type: String,
-    default:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDMW9y_SHGwzMDkuKNiGz40YM1aUlCvdkm_MiUqMOMIhNPAWyQD1W068w_DC2_qp8Ds6EqFSpwGowNubMkxBDVk872Zw2XZ7d2qzhComa9No6EdNANELVgaQM2PQcJ2Qgokf7o1WlZCQNmJqC2-K3Vsak-4_ekzLz9tdfndaUFoBI6wG6dNlSqsSF-kRANH90w_aODyaTg27WswJrF36o8sd9pQy2UyWQ9bw84tKtjc0_cta0_oq9Jcywg60sx5PFjNfnKk3JkTlfs",
-  },
+<script setup lang="ts">
+import { useAuth } from "../composable/useAuth";
+
+const props = defineProps<{
+  searchPlaceholder?: string;
+  userName?: string;
+  userRole?: string;
+}>();
+
+const { user, token, userInitials, fetchMe } = useAuth();
+
+const resolvedUserName = computed(
+  () => user.value?.name || props.userName || "Admin",
+);
+const resolvedUserRole = computed(() => {
+  if (user.value?.role === "ADMIN") {
+    return "Administrator";
+  }
+
+  if (user.value?.role === "USER") {
+    return "User";
+  }
+
+  return props.userRole || "Store Manager";
+});
+
+onMounted(async () => {
+  if (token.value && !user.value) {
+    try {
+      await fetchMe();
+    } catch {
+      // Route middleware handles invalid auth redirect.
+    }
+  }
 });
 </script>
 

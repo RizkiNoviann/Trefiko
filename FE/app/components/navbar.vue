@@ -6,14 +6,63 @@ import {
   ShoppingCart,
   Home,
   UtensilsCrossed,
+  LogOut,
 } from "lucide-vue-next";
+import { useAuth } from "../composable/useAuth";
 
 const mobileMenuOpen = ref(false);
+const userDropdownOpen = ref(false);
 const route = useRoute();
+const { user, token, isAuthenticated, userInitials, fetchMe, logout } =
+  useAuth();
+
+const accountPath = computed(() => {
+  if (!isAuthenticated.value) {
+    return "/auth/login";
+  }
+
+  if (user.value?.role === "ADMIN") {
+    return "/dashboard/home";
+  }
+
+  return "/";
+});
 
 function closeMobileMenu() {
   mobileMenuOpen.value = false;
 }
+
+const handleLogout = async () => {
+  logout();
+  userDropdownOpen.value = false;
+  await navigateTo("/");
+};
+
+// Close dropdown when clicking outside
+const handleClickOutside = (event: MouseEvent) => {
+  if (userDropdownOpen.value) {
+    const dropdown = document.querySelector('[data-dropdown="account"]');
+    if (dropdown && !dropdown.contains(event.target as Node)) {
+      userDropdownOpen.value = false;
+    }
+  }
+};
+
+onMounted(async () => {
+  if (token.value && !user.value) {
+    try {
+      await fetchMe();
+    } catch {
+      // Middleware handles invalid session cleanup.
+    }
+  }
+
+  document.addEventListener("click", handleClickOutside);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("click", handleClickOutside);
+});
 </script>
 
 <template>
@@ -21,7 +70,7 @@ function closeMobileMenu() {
     class="sticky top-0 z-50 w-full border-b border-primary/10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md"
   >
     <div
-      class="max-w-[1280px] mx-auto px-6 lg:px-40 py-4 flex items-center justify-between"
+      class="max-w-7xl mx-auto px-6 lg:px-40 py-4 flex items-center justify-between"
     >
       <!-- Logo -->
       <NuxtLink
@@ -57,14 +106,55 @@ function closeMobileMenu() {
       </nav>
 
       <!-- Right Actions -->
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 relative">
+        <!-- Account Button/Dropdown -->
+        <div class="relative" data-dropdown="account">
+          <button
+            v-if="isAuthenticated"
+            class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 hover:bg-primary/20 transition-all text-slate-900 dark:text-slate-100"
+            @click="userDropdownOpen = !userDropdownOpen"
+          >
+            <span class="text-sm font-black tracking-wide">
+              {{ userInitials }}
+            </span>
+          </button>
+          <NuxtLink
+            v-else
+            :to="accountPath"
+            class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 hover:bg-primary/20 transition-all text-slate-900 dark:text-slate-100"
+          >
+            <User :size="20" />
+          </NuxtLink>
+
+          <!-- Dropdown Menu -->
+          <div
+            v-if="isAuthenticated && userDropdownOpen"
+            class="absolute right-0 mt-2 w-48 bg-background-light dark:bg-background-dark rounded-xl border border-primary/10 shadow-lg overflow-hidden z-50"
+          >
+            <!-- User Info -->
+            <div class="px-4 py-3 border-b border-primary/10">
+              <p
+                class="text-sm font-semibold text-slate-900 dark:text-slate-100"
+              >
+                {{ user?.name }}
+              </p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">
+                {{ user?.email }}
+              </p>
+            </div>
+
+            <!-- Logout Button -->
+            <button
+              @click="handleLogout"
+              class="w-full px-4 py-3 flex items-center gap-3 text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all"
+            >
+              <LogOut :size="18" />
+              Logout
+            </button>
+          </div>
+        </div>
         <NuxtLink
-          to="/auth/login"
-          class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 hover:bg-primary/20 transition-all text-slate-900 dark:text-slate-100"
-        >
-          <User :size="20" />
-        </NuxtLink>
-        <NuxtLink
+          v-if="isAuthenticated"
           to="/chart"
           class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-background-dark shadow-lg shadow-primary/20 hover:scale-105 transition-all"
         >
@@ -109,6 +199,7 @@ function closeMobileMenu() {
           Menu
         </NuxtLink>
         <NuxtLink
+          v-if="isAuthenticated"
           to="/chart"
           class="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-semibold hover:bg-primary/10 hover:text-primary transition-all"
           :class="route.path === '/chart' ? 'text-primary bg-primary/5' : ''"
@@ -117,6 +208,14 @@ function closeMobileMenu() {
           <ShoppingCart :size="18" />
           Keranjang
         </NuxtLink>
+        <button
+          v-if="isAuthenticated"
+          @click="handleLogout"
+          class="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all w-full"
+        >
+          <LogOut :size="18" />
+          Logout
+        </button>
       </nav>
     </div>
   </header>
@@ -150,6 +249,7 @@ function closeMobileMenu() {
       <span class="text-[10px] font-bold">MENU</span>
     </NuxtLink>
     <NuxtLink
+      v-if="isAuthenticated"
       to="/chart"
       class="flex flex-col items-center gap-1 transition-colors"
       :class="
@@ -162,15 +262,18 @@ function closeMobileMenu() {
       <span class="text-[10px] font-bold">CART</span>
     </NuxtLink>
     <NuxtLink
-      to="/auth/login"
+      :to="accountPath"
       class="flex flex-col items-center gap-1 transition-colors"
       :class="
-        route.path.startsWith('/auth')
+        route.path.startsWith('/auth') || route.path.startsWith('/dashboard')
           ? 'text-primary'
           : 'text-slate-500 hover:text-primary'
       "
     >
-      <User :size="22" />
+      <span v-if="isAuthenticated" class="text-xs font-black tracking-wide">
+        {{ userInitials }}
+      </span>
+      <User v-else :size="22" />
       <span class="text-[10px] font-bold">AKUN</span>
     </NuxtLink>
   </nav>

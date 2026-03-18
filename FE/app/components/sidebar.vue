@@ -54,6 +54,7 @@
     <div class="p-4 mt-auto border-t border-slate-200 dark:border-slate-800">
       <button
         class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-red-500 w-full transition-colors"
+        @click="handleLogout"
       >
         <LogOut class="w-5 h-5" />
         <span class="text-sm font-medium">Logout</span>
@@ -71,6 +72,9 @@ import {
   Star,
   LogOut,
 } from "lucide-vue-next";
+import { useAuth } from "../composable/useAuth";
+
+const { logout } = useAuth();
 
 defineProps({
   activeMenu: {
@@ -78,4 +82,9 @@ defineProps({
     default: "dashboard",
   },
 });
+
+const handleLogout = async () => {
+  logout();
+  await navigateTo("/auth/login");
+};
 </script>
