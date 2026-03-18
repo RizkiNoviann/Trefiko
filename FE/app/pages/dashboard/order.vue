@@ -225,6 +225,8 @@
 </template>
 
 <script setup>
+definePageMeta({ layout: "dashboard" });
+
 import {
   ChevronLeft,
   ChevronRight,

@@ -168,6 +168,8 @@
 </template>
 
 <script setup>
+definePageMeta({ layout: "dashboard" });
+
 import { Star, StarHalf, TrendingUp, Trash2 } from "lucide-vue-next";
 import Sidebar from "~/components/sidebar.vue";
 import NavAdmin from "~/components/navadmin.vue";
