@@ -1,9 +1,20 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { existsSync, mkdirSync } from 'fs';
+import { join } from 'path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const imageDir = join(process.cwd(), 'src', 'image');
+
+  if (!existsSync(imageDir)) {
+    mkdirSync(imageDir, { recursive: true });
+  }
+
+  app.useStaticAssets(imageDir, { prefix: '/images/' });
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

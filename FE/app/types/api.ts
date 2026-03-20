@@ -34,3 +34,41 @@ export interface LoginPayload {
   identifier: string;
   password: string;
 }
+
+export type MenuCategory = 'COFFEE' | 'NON_COFFEE' | 'SNACK';
+
+export interface MenuItem {
+  id: string;
+  image: string;
+  title: string;
+  description: string;
+  category: MenuCategory;
+  price: number;
+  status: boolean;
+  favorite: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MenusResponse extends ApiMessageResponse {
+  menus: MenuItem[];
+}
+
+export interface MenuResponse extends ApiMessageResponse {
+  menu: MenuItem;
+}
+
+export interface MenuPayload {
+  image: string;
+  title: string;
+  description: string;
+  category: MenuCategory;
+  price: number;
+  status: boolean;
+  favorite: boolean;
+}
+
+export interface MenuImageUploadResponse extends ApiMessageResponse {
+  image: string;
+  filename: string;
+}

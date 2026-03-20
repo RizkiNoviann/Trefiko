@@ -3,9 +3,7 @@ import { Globe, Mail, Phone } from "lucide-vue-next";
 </script>
 
 <template>
-  <footer
-    class="bg-[#0b1a0f] text-slate-100 px-6 lg:px-40 py-16 md:py-24 pb-20 md:pb-24"
-  >
+  <footer class="bg-[#0b1a0f] text-slate-100 px-6 lg:px-40 pt-16 md:pt-24">
     <div
       class="max-w-[1280px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-16"
     >
