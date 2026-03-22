@@ -1,13 +1,17 @@
 <script setup lang="ts">
+import { ref, computed } from "vue";
 import { ArrowLeft, Minus, Plus, ShoppingCart } from "lucide-vue-next";
 import { useMenu } from "~/composable/useMenu";
+import { useCart } from "~/composable/useCart";
+import { useAuth } from "~/composable/useAuth";
 import type { MenuItem } from "~/types/api";
 
 const config = useRuntimeConfig();
 const route = useRoute();
 const { getMenu } = useMenu();
+const { addToCart, decreaseQty, cartItems } = useCart();
+const { isAuthenticated } = useAuth();
 
-const quantity = ref(1);
 const temperature = ref<"hot" | "iced">("hot");
 const isLoading = ref(false);
 const menu = ref<MenuItem | null>(null);
@@ -19,12 +23,8 @@ const showTemperature = computed(() => {
 });
 
 const fetchDetail = async () => {
-  if (!menuId.value) {
-    return;
-  }
-
+  if (!menuId.value) return;
   isLoading.value = true;
-
   try {
     const response = await getMenu(menuId.value);
     menu.value = response.menu;
@@ -33,22 +33,33 @@ const fetchDetail = async () => {
   }
 };
 
-const increaseQty = () => {
-  quantity.value += 1;
-};
-
-const decreaseQty = () => {
-  if (quantity.value > 1) {
-    quantity.value -= 1;
-  }
-};
-
-const formatPrice = (price: number) => {
-  return new Intl.NumberFormat("id-ID", {
+const formatPrice = (price: number) =>
+  new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
     maximumFractionDigits: 0,
   }).format(price);
+
+const getItemQtyInCart = computed(() => {
+  if (!menu.value) return 0;
+  return (
+    cartItems.value.find((i) => i.menu.id === menu.value!.id)?.quantity ?? 0
+  );
+});
+
+const handleIncreaseQty = () => {
+  if (!menu.value) return;
+
+  addToCart(
+    menu.value,
+    1,
+    showTemperature.value ? temperature.value : undefined,
+  );
+};
+
+const handleDecreaseQty = () => {
+  if (!menu.value) return;
+  decreaseQty(menu.value.id);
 };
 
 await fetchDetail();
@@ -87,11 +98,21 @@ useSeoMeta({
         />
 
         <div class="mt-6">
-          <h1
-            class="text-4xl font-black tracking-tight text-slate-900 dark:text-slate-100"
-          >
-            {{ menu.title }}
-          </h1>
+          <div class="flex items-start justify-between gap-4">
+            <h1
+              class="text-4xl font-black tracking-tight text-slate-900 dark:text-slate-100"
+            >
+              {{ menu.title }}
+            </h1>
+            <!-- In-cart badge -->
+            <div
+              v-if="getItemQtyInCart > 0"
+              class="mt-1.5 inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1.5 text-xs font-black text-primary"
+            >
+              <ShoppingCart :size="12" />
+              {{ getItemQtyInCart }}x di keranjang
+            </div>
+          </div>
           <p class="mt-2 text-3xl font-black text-primary">
             {{ formatPrice(menu.price) }}
           </p>
@@ -107,6 +128,7 @@ useSeoMeta({
         </div>
 
         <div class="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+          <!-- Quantity -->
           <div>
             <h3 class="mb-3 text-lg font-bold">Quantity</h3>
             <div
@@ -114,25 +136,29 @@ useSeoMeta({
             >
               <button
                 class="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-slate-900 hover:bg-primary/10 dark:bg-slate-700 dark:text-slate-100"
-                @click="decreaseQty"
+                @click="handleDecreaseQty"
+                :disabled="getItemQtyInCart === 0"
               >
                 <Minus :size="18" />
               </button>
-              <span class="px-4 text-xl font-black">{{ quantity }}</span>
+              <span class="px-4 text-xl font-black">{{
+                getItemQtyInCart
+              }}</span>
               <button
                 class="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-slate-900"
-                @click="increaseQty"
+                @click="handleIncreaseQty"
               >
                 <Plus :size="18" />
               </button>
             </div>
           </div>
 
+          <!-- Temperature -->
           <div v-if="showTemperature">
             <h3 class="mb-3 text-lg font-bold">Temperature</h3>
             <div class="flex gap-3">
               <button
-                class="flex-1 rounded-xl border-2 px-4 py-3 text-sm font-bold"
+                class="flex-1 rounded-xl border-2 px-4 py-3 text-sm font-bold transition"
                 :class="
                   temperature === 'hot'
                     ? 'border-primary bg-primary/10'
@@ -143,7 +169,7 @@ useSeoMeta({
                 Hot
               </button>
               <button
-                class="flex-1 rounded-xl border-2 px-4 py-3 text-sm font-bold"
+                class="flex-1 rounded-xl border-2 px-4 py-3 text-sm font-bold transition"
                 :class="
                   temperature === 'iced'
                     ? 'border-primary bg-primary/10'
@@ -157,21 +183,24 @@ useSeoMeta({
           </div>
         </div>
 
-        <div class="mt-8 grid grid-cols-1 gap-3 pb-12 sm:grid-cols-2">
+        <!-- Action buttons -->
+        <div v-if="isAuthenticated" class="mt-8 pb-28">
+          <!-- Buy Now -->
           <NuxtLink
             :to="`/menu/checkout/${menu.id}`"
-            class="flex h-14 items-center justify-center gap-2 rounded-xl bg-primary/15 text-base font-bold text-slate-900 transition hover:bg-primary/25 dark:text-slate-100"
+            class="flex h-14 items-center justify-center rounded-xl bg-primary text-base font-black text-slate-900 transition hover:brightness-105 active:scale-[0.98]"
           >
-            <ShoppingCart :size="20" />
-            Add to Cart
-          </NuxtLink>
-          <NuxtLink
-            :to="`/menu/checkout/${menu.id}`"
-            class="flex h-14 items-center justify-center rounded-xl bg-primary text-base font-black text-slate-900 transition hover:brightness-105"
-          >
-            Buy Now
+            Beli Sekarang
           </NuxtLink>
         </div>
+
+        <NuxtLink
+          v-else
+          to="/auth/login"
+          class="mt-8 inline-flex h-14 items-center justify-center rounded-xl bg-primary/15 px-6 text-base font-bold text-slate-900 transition hover:bg-primary/25 dark:text-slate-100"
+        >
+          Login untuk order
+        </NuxtLink>
       </div>
     </div>
   </div>

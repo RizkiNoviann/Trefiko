@@ -72,3 +72,58 @@ export interface MenuImageUploadResponse extends ApiMessageResponse {
   image: string;
   filename: string;
 }
+
+export type PaymentMethod = 'COD' | 'DIRECT';
+export type AdminOrderStatus = 'PENDING' | 'PROCESS' | 'COMPLETED';
+export type UserOrderStatus = 'PROCESS' | 'COMPLETED';
+
+export interface OrderItem {
+  id: string;
+  menuId: string;
+  quantity: number;
+  temperature?: 'hot' | 'iced' | null;
+  unitPrice: number;
+  lineTotal: number;
+  menu: MenuItem;
+}
+
+export interface Order {
+  id: string;
+  code: string;
+  userId: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  payment: PaymentMethod;
+  status: AdminOrderStatus;
+  note?: string | null;
+  totalAmount: number;
+  items: OrderItem[];
+  createdAt: string;
+  updatedAt: string;
+  userStatus?: UserOrderStatus;
+}
+
+export interface CheckoutPayload {
+  payment: PaymentMethod;
+  note?: string;
+  items: Array<{
+    menuId: string;
+    quantity: number;
+    temperature?: 'hot' | 'iced';
+  }>;
+}
+
+export interface CheckoutResponse extends ApiMessageResponse {
+  order: Order;
+}
+
+export interface OrdersResponse extends ApiMessageResponse {
+  orders: Order[];
+}
+
+export interface OrderResponse extends ApiMessageResponse {
+  order: Order;
+}

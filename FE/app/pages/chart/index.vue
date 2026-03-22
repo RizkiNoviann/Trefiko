@@ -1,214 +1,296 @@
 <script setup lang="ts">
-import {
-  Minus,
-  Plus,
-  Trash2,
-  Cookie,
-  Droplets,
-  ArrowRight,
-} from "lucide-vue-next";
+import { computed, onMounted, ref } from "vue";
+import { ArrowRight, PackageSearch, Trash2 } from "lucide-vue-next";
+import { useOrder } from "~/composable/useOrder";
+import type { Order } from "~/types/api";
 
 useSeoMeta({
-  title: "Keranjang | Cafe Trefiko",
+  title: "Pesanan Saya | Cafe Trefiko",
 });
+
+const config = useRuntimeConfig();
+const { listMyOrders, hideMyCompletedOrder } = useOrder();
+
+const isLoading = ref(false);
+const errorMessage = ref("");
+const orders = ref<Order[]>([]);
+const expandedOrders = ref<Set<string>>(new Set());
+const deletingOrderId = ref("");
+
+const formatPrice = (price: number) =>
+  new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(price);
+
+const formatDate = (value: string) => {
+  return new Date(value).toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const processOrders = computed(() =>
+  orders.value.filter((order) => order.userStatus === "PROCESS"),
+);
+const doneOrders = computed(() =>
+  orders.value.filter((order) => order.userStatus === "COMPLETED"),
+);
+
+const toggleOrder = (orderId: string) => {
+  if (expandedOrders.value.has(orderId)) {
+    expandedOrders.value.delete(orderId);
+    return;
+  }
+
+  expandedOrders.value.add(orderId);
+};
+
+const isExpanded = (orderId: string) => expandedOrders.value.has(orderId);
+
+const fetchOrders = async () => {
+  isLoading.value = true;
+  errorMessage.value = "";
+
+  try {
+    const response = await listMyOrders();
+    orders.value = response.orders;
+  } catch (error: any) {
+    errorMessage.value = error?.message || "Gagal memuat pesanan";
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const onHideCompletedOrder = async (orderId: string) => {
+  deletingOrderId.value = orderId;
+  errorMessage.value = "";
+
+  try {
+    await hideMyCompletedOrder(orderId);
+    orders.value = orders.value.filter((order) => order.id !== orderId);
+    expandedOrders.value.delete(orderId);
+  } catch (error: any) {
+    errorMessage.value = error?.message || "Gagal menghapus riwayat";
+  } finally {
+    deletingOrderId.value = "";
+  }
+};
+
+onMounted(fetchOrders);
 </script>
 
 <template>
-  <div class="flex-grow max-w-3xl mx-auto w-full px-6 py-12">
+  <div class="mx-auto w-full max-w-4xl px-6 py-12">
     <div class="flex flex-col gap-8">
       <div
         class="flex items-end justify-between border-b border-primary/10 pb-6"
       >
-        <h2 class="text-4xl font-black tracking-tight">Your Cart</h2>
-        <p class="text-primary font-medium">2 items</p>
+        <div>
+          <h2 class="text-4xl font-black tracking-tight">Pesanan Saya</h2>
+          <p
+            class="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400"
+          >
+            Status user: proses dan selesai
+          </p>
+        </div>
+        <NuxtLink
+          to="/menu"
+          class="flex items-center gap-2 text-sm font-semibold text-primary transition-all hover:underline"
+        >
+          Pesan Lagi
+          <ArrowRight :size="15" />
+        </NuxtLink>
       </div>
 
-      <!-- Cart Items -->
-      <div class="space-y-1">
-        <!-- Item 1 -->
-        <div
-          class="flex items-center gap-4 sm:gap-6 py-6 border-b border-primary/5 group"
-        >
-          <div
-            class="h-20 w-20 sm:h-24 sm:w-24 rounded-xl bg-slate-200 overflow-hidden flex-shrink-0"
-          >
-            <img
-              alt="Vanilla Oat Latte"
-              class="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLmPtsLpCziBGiGAnj1tM48xRzMQVrQSTJK-7Q1i_qqfBP9k_9oov1fbgdlFib7rWch20qzcvyz37Wi7Kv5zYXR3sdN82_BQASpftwfceJ2h3BsZfVfzytJVZSOdxkEJkyEgAQqJBhVpCLiiX46L2uQCe8lH4SumtxmcsOtgdyrzgMEOP0-_uOnY6a_0zghJVrEPzGEWZS0rO6vIurrgF41iYO794bYLobrz6eForvLZFb_SFAzZbLBE6uThtdCiXwdHC02eAX2xA"
-            />
-          </div>
-          <div
-            class="flex-grow flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-          >
-            <div class="space-y-1">
-              <h3 class="text-lg font-bold">Vanilla Oat Latte</h3>
-              <p class="text-sm text-slate-500 dark:text-slate-400">
-                Regular • Oat Milk • Extra Hot
-              </p>
-              <p class="text-primary font-semibold">$5.50</p>
-            </div>
-            <div class="flex items-center gap-4">
-              <div
-                class="flex items-center bg-primary/10 rounded-full px-2 py-1"
-              >
-                <button
-                  class="h-8 w-8 flex items-center justify-center rounded-full hover:bg-white dark:hover:bg-slate-800 transition-colors"
-                >
-                  <Minus :size="14" />
-                </button>
-                <span class="w-8 text-center font-bold">1</span>
-                <button
-                  class="h-8 w-8 flex items-center justify-center rounded-full hover:bg-white dark:hover:bg-slate-800 transition-colors"
-                >
-                  <Plus :size="14" />
-                </button>
-              </div>
-              <button
-                class="p-2 text-slate-400 hover:text-red-500 transition-colors"
-              >
-                <Trash2 :size="18" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Item 2 -->
-        <div
-          class="flex items-center gap-4 sm:gap-6 py-6 border-b border-primary/5 group"
-        >
-          <div
-            class="h-20 w-20 sm:h-24 sm:w-24 rounded-xl bg-slate-200 overflow-hidden flex-shrink-0"
-          >
-            <img
-              alt="Butter Croissant"
-              class="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDP9Z7CN18T08v5pRHxTfTUbrn8TWgOOkkbnQSYsHhLLDlr1I8KuigUsmpkIV4HA7_mxDlAOwG000pUt4w3CTyrVnPhP0VelgV54xhcbt5JEDuBBmVvtkYvaZzMdvxvKLQhPTwoNzkSQPBArMNmVVybCrwRSqkZRoVASHLZ4zfQc5W3NnL1y07XSZ5DAeOPb7pBtot0Yspqg8PfMcV2rC6wVJtJVCnBjrtZGDG_wSYMBfdAFfRsl2egGaPBOPMa4-yYhqYg8WzPWCM"
-            />
-          </div>
-          <div
-            class="flex-grow flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-          >
-            <div class="space-y-1">
-              <h3 class="text-lg font-bold">Butter Croissant</h3>
-              <p class="text-sm text-slate-500 dark:text-slate-400">
-                Warmed • Side of Jam
-              </p>
-              <p class="text-primary font-semibold">$4.25</p>
-            </div>
-            <div class="flex items-center gap-4">
-              <div
-                class="flex items-center bg-primary/10 rounded-full px-2 py-1"
-              >
-                <button
-                  class="h-8 w-8 flex items-center justify-center rounded-full hover:bg-white dark:hover:bg-slate-800 transition-colors"
-                >
-                  <Minus :size="14" />
-                </button>
-                <span class="w-8 text-center font-bold">2</span>
-                <button
-                  class="h-8 w-8 flex items-center justify-center rounded-full hover:bg-white dark:hover:bg-slate-800 transition-colors"
-                >
-                  <Plus :size="14" />
-                </button>
-              </div>
-              <button
-                class="p-2 text-slate-400 hover:text-red-500 transition-colors"
-              >
-                <Trash2 :size="18" />
-              </button>
-            </div>
-          </div>
-        </div>
+      <div v-if="isLoading" class="py-10 text-center text-slate-500">
+        Memuat pesanan...
       </div>
 
-      <!-- Order Summary -->
       <div
-        class="bg-white dark:bg-slate-900/50 rounded-2xl p-8 border border-primary/10 shadow-sm"
+        v-else-if="errorMessage"
+        class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300"
       >
-        <div class="space-y-4">
-          <div class="flex justify-between text-slate-600 dark:text-slate-400">
-            <span>Subtotal</span>
-            <span class="font-medium text-slate-900 dark:text-slate-100"
-              >$14.00</span
-            >
-          </div>
-          <div class="flex justify-between text-slate-600 dark:text-slate-400">
-            <span>Estimated Tax</span>
-            <span class="font-medium text-slate-900 dark:text-slate-100"
-              >$1.12</span
-            >
-          </div>
-          <div
-            class="pt-4 border-t border-primary/10 flex justify-between items-end"
-          >
-            <span class="text-xl font-bold">Total</span>
-            <span class="block text-3xl font-black text-primary">$15.12</span>
-          </div>
-        </div>
-        <div class="mt-8 flex flex-col gap-3">
-          <NuxtLink
-            to="/menu/checkout/1"
-            class="w-full bg-primary hover:bg-primary/90 text-slate-900 font-bold py-4 rounded-xl transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
-          >
-            Checkout Now
-            <ArrowRight :size="18" />
-          </NuxtLink>
-          <NuxtLink
-            to="/menu"
-            class="w-full py-4 text-sm font-semibold text-slate-500 hover:text-primary transition-colors text-center"
-          >
-            Continue Shopping
-          </NuxtLink>
-        </div>
+        {{ errorMessage }}
       </div>
 
-      <!-- Recommendations -->
-      <div class="mt-8">
-        <h4 class="text-lg font-bold mb-6">Add a little extra?</h4>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div
-            class="flex items-center justify-between p-4 rounded-xl border border-primary/5 bg-white dark:bg-slate-900/30 hover:border-primary/30 transition-all cursor-pointer group"
-          >
-            <div class="flex items-center gap-3">
-              <div
-                class="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center"
-              >
-                <Cookie :size="22" class="text-primary" />
-              </div>
-              <div>
-                <p class="font-bold text-sm">Chocolate Cookie</p>
-                <p class="text-xs text-primary">+$2.50</p>
-              </div>
-            </div>
-            <button
-              class="h-8 w-8 rounded-full bg-primary/10 group-hover:bg-primary group-hover:text-slate-900 transition-colors flex items-center justify-center"
-            >
-              <Plus :size="16" />
-            </button>
-          </div>
+      <div
+        v-else-if="orders.length === 0"
+        class="flex flex-col items-center justify-center gap-4 py-20 text-slate-400"
+      >
+        <PackageSearch :size="48" class="text-primary/30" />
+        <p class="text-lg font-semibold">Belum ada pesanan yang diproses</p>
+      </div>
 
-          <div
-            class="flex items-center justify-between p-4 rounded-xl border border-primary/5 bg-white dark:bg-slate-900/30 hover:border-primary/30 transition-all cursor-pointer group"
-          >
-            <div class="flex items-center gap-3">
-              <div
-                class="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center"
+      <div v-else class="space-y-8">
+        <section>
+          <div class="mb-3 flex items-center justify-between">
+            <h3 class="text-lg font-black">
+              Sedang Diproses ({{ processOrders.length }})
+            </h3>
+          </div>
+          <div class="space-y-3">
+            <div
+              v-for="order in processOrders"
+              :key="order.id"
+              class="rounded-xl border border-amber-200/50 bg-white p-4 shadow-sm dark:border-amber-900/40 dark:bg-slate-900/60"
+            >
+              <button
+                class="flex w-full items-start justify-between gap-4 text-left"
+                @click="toggleOrder(order.id)"
               >
-                <Droplets :size="22" class="text-primary" />
-              </div>
-              <div>
-                <p class="font-bold text-sm">Bottled Water</p>
-                <p class="text-xs text-primary">+$1.75</p>
+                <div>
+                  <p
+                    class="text-xs font-bold uppercase tracking-wide text-amber-500"
+                  >
+                    Proses
+                  </p>
+                  <p class="text-base font-black">{{ order.code }}</p>
+                  <p class="text-xs text-slate-500">
+                    {{ formatDate(order.createdAt) }}
+                  </p>
+                </div>
+                <div class="text-right">
+                  <p class="text-sm font-semibold">
+                    {{ formatPrice(order.totalAmount) }}
+                  </p>
+                  <p class="text-xs text-slate-500">
+                    {{ order.items.length }} item
+                  </p>
+                </div>
+              </button>
+
+              <div
+                v-if="isExpanded(order.id)"
+                class="mt-4 space-y-2 border-t border-slate-100 pt-4 dark:border-slate-800"
+              >
+                <div
+                  v-for="item in order.items"
+                  :key="item.id"
+                  class="flex items-center justify-between gap-3"
+                >
+                  <div class="flex min-w-0 items-center gap-3">
+                    <img
+                      :src="`${config.public.apiBaseUrl}${item.menu.image}`"
+                      :alt="item.menu.title"
+                      class="h-11 w-11 rounded-lg object-cover"
+                    />
+                    <p class="truncate text-sm">
+                      {{ item.quantity }}x {{ item.menu.title }}
+                      <span v-if="item.temperature" class="text-slate-400"
+                        >({{ item.temperature }})</span
+                      >
+                    </p>
+                  </div>
+                  <p class="text-sm font-semibold">
+                    {{ formatPrice(item.lineTotal) }}
+                  </p>
+                </div>
+                <div
+                  v-if="order.note"
+                  class="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                >
+                  Catatan: {{ order.note }}
+                </div>
               </div>
             </div>
-            <button
-              class="h-8 w-8 rounded-full bg-primary/10 group-hover:bg-primary group-hover:text-slate-900 transition-colors flex items-center justify-center"
-            >
-              <Plus :size="16" />
-            </button>
           </div>
-        </div>
+        </section>
+
+        <section>
+          <div class="mb-3 flex items-center justify-between">
+            <h3 class="text-lg font-black">
+              Selesai ({{ doneOrders.length }})
+            </h3>
+          </div>
+          <div class="space-y-3">
+            <div
+              v-for="order in doneOrders"
+              :key="order.id"
+              class="rounded-xl border border-emerald-200/50 bg-white p-4 shadow-sm dark:border-emerald-900/40 dark:bg-slate-900/60"
+            >
+              <button
+                class="flex w-full items-start justify-between gap-4 text-left"
+                @click="toggleOrder(order.id)"
+              >
+                <div>
+                  <p
+                    class="text-xs font-bold uppercase tracking-wide text-emerald-500"
+                  >
+                    Selesai
+                  </p>
+                  <p class="text-base font-black">{{ order.code }}</p>
+                  <p class="text-xs text-slate-500">
+                    {{ formatDate(order.createdAt) }}
+                  </p>
+                </div>
+                <div class="text-right">
+                  <p class="text-sm font-semibold">
+                    {{ formatPrice(order.totalAmount) }}
+                  </p>
+                  <p class="text-xs text-slate-500">
+                    {{ order.items.length }} item
+                  </p>
+                </div>
+              </button>
+
+              <div
+                class="mt-4 flex justify-end border-t border-slate-100 pt-3 dark:border-slate-800"
+              >
+                <button
+                  class="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-60 dark:border-red-900/40 dark:hover:bg-red-900/20"
+                  :disabled="deletingOrderId === order.id"
+                  @click="onHideCompletedOrder(order.id)"
+                >
+                  <Trash2 :size="14" />
+                  {{
+                    deletingOrderId === order.id
+                      ? "Menghapus..."
+                      : "Hapus Riwayat"
+                  }}
+                </button>
+              </div>
+
+              <div
+                v-if="isExpanded(order.id)"
+                class="mt-4 space-y-2 border-t border-slate-100 pt-4 dark:border-slate-800"
+              >
+                <div
+                  v-for="item in order.items"
+                  :key="item.id"
+                  class="flex items-center justify-between gap-3"
+                >
+                  <div class="flex min-w-0 items-center gap-3">
+                    <img
+                      :src="`${config.public.apiBaseUrl}${item.menu.image}`"
+                      :alt="item.menu.title"
+                      class="h-11 w-11 rounded-lg object-cover"
+                    />
+                    <p class="truncate text-sm">
+                      {{ item.quantity }}x {{ item.menu.title }}
+                      <span v-if="item.temperature" class="text-slate-400"
+                        >({{ item.temperature }})</span
+                      >
+                    </p>
+                  </div>
+                  <p class="text-sm font-semibold">
+                    {{ formatPrice(item.lineTotal) }}
+                  </p>
+                </div>
+                <div
+                  v-if="order.note"
+                  class="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                >
+                  Catatan: {{ order.note }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   </div>

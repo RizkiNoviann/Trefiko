@@ -9,5 +9,6 @@
     </main>
 
     <Footer />
+    <CartPreviewBar />
   </div>
 </template>

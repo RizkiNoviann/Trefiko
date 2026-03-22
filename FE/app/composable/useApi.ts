@@ -35,6 +35,30 @@ export function useApi() {
       return response.data;
     }
     catch (error: any) {
+      // Fallback to backend default URL when current base URL accidentally points to Nuxt app.
+      const shouldFallback =
+        error?.response?.status === 404
+        && typeof requestConfig.url === 'string'
+        && requestConfig.url.startsWith('/');
+
+      if (shouldFallback) {
+        const fallbackClient = axios.create({
+          baseURL: 'http://localhost:3001',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token.value ? { Authorization: `Bearer ${token.value}` } : {}),
+          },
+        });
+
+        try {
+          const fallbackResponse = await fallbackClient.request<T>(requestConfig);
+          return fallbackResponse.data;
+        }
+        catch {
+          // Ignore fallback error and throw original normalized API error below.
+        }
+      }
+
       const message =
         error?.response?.data?.message || error?.message || 'Unknown API error';
       throw new Error(Array.isArray(message) ? message.join(', ') : message);

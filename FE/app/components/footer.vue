@@ -42,7 +42,7 @@ import { Globe, Mail, Phone } from "lucide-vue-next";
         <ul class="flex flex-col gap-4 text-slate-400">
           <li>
             <NuxtLink to="/" class="hover:text-primary transition-colors"
-              >Home</NuxtLink
+              >Beranda</NuxtLink
             >
           </li>
           <li>
@@ -51,13 +51,20 @@ import { Globe, Mail, Phone } from "lucide-vue-next";
             >
           </li>
           <li>
-            <NuxtLink to="/chart" class="hover:text-primary transition-colors"
-              >Kontak</NuxtLink
+            <a href="#tentang-kami" class="hover:text-primary transition-colors"
+              >Tentang</a
             >
           </li>
+
           <li>
-            <a href="#tentang-kami" class="hover:text-primary transition-colors"
-              >Tentang Kami</a
+            <a href="#lokasi" class="hover:text-primary transition-colors"
+              >Kontak</a
+            >
+          </li>
+
+          <li>
+            <a href="#ulasan" class="hover:text-primary transition-colors"
+              >Ulasan</a
             >
           </li>
         </ul>

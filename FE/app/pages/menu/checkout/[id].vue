@@ -1,200 +1,250 @@
 <script setup lang="ts">
+import { computed, ref } from "vue";
 import {
   ArrowLeft,
-  CreditCard,
-  CheckCircle2,
-  Circle,
   ArrowRight,
+  CheckCircle2,
+  CreditCard,
 } from "lucide-vue-next";
+import { useCart } from "~/composable/useCart";
+import { useOrder } from "~/composable/useOrder";
+import { useAuth } from "~/composable/useAuth";
+import type { PaymentMethod } from "~/types/api";
 
 useSeoMeta({
   title: "Checkout | Cafe Trefiko",
 });
 
-const selectedPayment = ref("now");
+const config = useRuntimeConfig();
+const router = useRouter();
+const { isAuthenticated } = useAuth();
+const { cartItems, totalPrice, clearCart } = useCart();
+const { checkout } = useOrder();
+
+const selectedPayment = ref<PaymentMethod>("COD");
+const orderNote = ref("");
+const isSubmitting = ref(false);
+const errorMessage = ref("");
+
+const formatPrice = (price: number) =>
+  new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(price);
+
+const canCheckout = computed(
+  () => cartItems.value.length > 0 && !isSubmitting.value,
+);
+
+const chooseDirectComingSoon = () => {
+  if (import.meta.client) {
+    window.alert("Coming soon: Bayar Langsung akan memakai payment gateway.");
+  }
+  selectedPayment.value = "COD";
+};
+
+const chooseCod = () => {
+  selectedPayment.value = "COD";
+};
+
+const submitCheckout = async () => {
+  errorMessage.value = "";
+
+  if (!isAuthenticated.value) {
+    await router.push("/auth/login");
+    return;
+  }
+
+  if (cartItems.value.length === 0) {
+    errorMessage.value = "Keranjang masih kosong.";
+    return;
+  }
+
+  isSubmitting.value = true;
+
+  try {
+    await checkout({
+      payment: selectedPayment.value,
+      note: orderNote.value.trim() || undefined,
+      items: cartItems.value.map((item) => ({
+        menuId: item.menu.id,
+        quantity: item.quantity,
+        temperature: item.temperature,
+      })),
+    });
+
+    clearCart();
+    await router.push("/chart");
+  } catch (error: any) {
+    errorMessage.value = error?.message || "Checkout gagal";
+  } finally {
+    isSubmitting.value = false;
+  }
+};
 </script>
 
 <template>
-  <div class="flex-1 max-w-[1280px] mx-auto w-full px-6 lg:px-40 py-8">
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- Left Column: Checkout Details -->
-      <div class="lg:col-span-2 space-y-6">
-        <div class="flex items-center gap-2 mb-2">
-          <NuxtLink
-            to="/chart"
-            class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors"
-          >
-            <ArrowLeft :size="20" />
-          </NuxtLink>
-          <h1 class="text-3xl font-bold tracking-tight">Checkout</h1>
+  <div class="mx-auto flex w-full max-w-7xl flex-1 flex-col px-6 py-8 lg:px-20">
+    <div class="mb-3 flex items-center gap-2">
+      <NuxtLink
+        to="/menu"
+        class="rounded-full p-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+      >
+        <ArrowLeft :size="20" />
+      </NuxtLink>
+      <h1 class="text-3xl font-bold tracking-tight">Checkout</h1>
+    </div>
+
+    <div
+      v-if="cartItems.length === 0"
+      class="mt-6 rounded-xl border border-dashed border-slate-300 p-6 text-center text-slate-500"
+    >
+      Keranjang kosong. Silakan tambah menu dulu dari halaman menu.
+    </div>
+
+    <div v-else class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+      <div class="space-y-6 lg:col-span-2">
+        <div
+          class="rounded-xl border border-primary/10 bg-white p-6 shadow-sm dark:border-primary/5 dark:bg-slate-900"
+        >
+          <div class="mb-4 flex items-center gap-3">
+            <CreditCard :size="22" class="text-primary" />
+            <h3 class="text-lg font-bold">Metode Pembayaran</h3>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <button
+              type="button"
+              class="flex rounded-xl border-2 p-4 text-left transition-all"
+              :class="
+                selectedPayment === 'DIRECT'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-slate-200 hover:border-primary/40 dark:border-slate-700'
+              "
+              @click="chooseDirectComingSoon"
+            >
+              <div class="flex flex-1 flex-col">
+                <span class="text-sm font-bold">Bayar Langsung</span>
+                <span class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Coming soon (payment gateway)
+                </span>
+              </div>
+              <CheckCircle2
+                :size="20"
+                :class="
+                  selectedPayment === 'DIRECT'
+                    ? 'text-primary'
+                    : 'text-slate-300 dark:text-slate-600'
+                "
+              />
+            </button>
+
+            <button
+              type="button"
+              class="flex rounded-xl border-2 p-4 text-left transition-all"
+              :class="
+                selectedPayment === 'COD'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-slate-200 hover:border-primary/40 dark:border-slate-700'
+              "
+              @click="chooseCod"
+            >
+              <div class="flex flex-1 flex-col">
+                <span class="text-sm font-bold">Bayar di Tempat (COD)</span>
+                <span class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Metode aktif saat ini
+                </span>
+              </div>
+              <CheckCircle2
+                :size="20"
+                :class="
+                  selectedPayment === 'COD'
+                    ? 'text-primary'
+                    : 'text-slate-300 dark:text-slate-600'
+                "
+              />
+            </button>
+          </div>
         </div>
 
-        <!-- Payment Method -->
         <div
-          class="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-primary/10 dark:border-primary/5"
+          class="rounded-xl border border-primary/10 bg-white p-6 shadow-sm dark:border-primary/5 dark:bg-slate-900"
         >
-          <div class="flex items-center gap-3 mb-4">
-            <CreditCard :size="22" class="text-primary" />
-            <h3 class="text-lg font-bold">Payment Method</h3>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- Pay Now -->
-            <label
-              class="relative flex cursor-pointer rounded-xl border-2 p-4 transition-all"
-              :class="
-                selectedPayment === 'now'
-                  ? 'border-primary bg-primary/5'
-                  : 'border-slate-200 dark:border-slate-700 hover:border-primary/40'
-              "
-            >
-              <input
-                v-model="selectedPayment"
-                class="sr-only"
-                name="payment-option"
-                type="radio"
-                value="now"
-              />
-              <span class="flex flex-1">
-                <span class="flex flex-col">
-                  <span
-                    class="block text-sm font-bold text-slate-900 dark:text-slate-100"
-                    >Bayar Langsung</span
-                  >
-                  <span
-                    class="mt-1 flex items-center text-xs text-slate-500 dark:text-slate-400"
-                  >
-                    E-Wallet, Credit Card, Virtual Account
-                  </span>
-                </span>
-              </span>
-              <CheckCircle2
-                :size="20"
-                :class="
-                  selectedPayment === 'now'
-                    ? 'text-primary'
-                    : 'text-slate-300 dark:text-slate-600'
-                "
-              />
-            </label>
+          <h3 class="mb-3 text-lg font-bold">Catatan Pesanan</h3>
+          <textarea
+            v-model="orderNote"
+            rows="3"
+            placeholder="Contoh: tolong tanpa gula, antar jam 10 pagi"
+            class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary dark:border-slate-700 dark:bg-slate-800"
+          />
+          <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            Opsional. Catatan ini akan terlihat oleh admin.
+          </p>
+        </div>
 
-            <!-- Cash on Delivery -->
-            <label
-              class="relative flex cursor-pointer rounded-xl border-2 p-4 transition-all"
-              :class="
-                selectedPayment === 'cod'
-                  ? 'border-primary bg-primary/5'
-                  : 'border-slate-200 dark:border-slate-700 hover:border-primary/40'
-              "
+        <div
+          class="rounded-xl border border-primary/10 bg-white p-6 shadow-sm dark:border-primary/5 dark:bg-slate-900"
+        >
+          <h3 class="mb-4 text-lg font-bold">Pesanan Kamu</h3>
+          <div class="space-y-4">
+            <div
+              v-for="item in cartItems"
+              :key="item.menu.id"
+              class="flex items-center gap-4"
             >
-              <input
-                v-model="selectedPayment"
-                class="sr-only"
-                name="payment-option"
-                type="radio"
-                value="cod"
+              <img
+                :src="`${config.public.apiBaseUrl}${item.menu.image}`"
+                :alt="item.menu.title"
+                class="size-16 shrink-0 rounded-lg object-cover"
               />
-              <span class="flex flex-1">
-                <span class="flex flex-col">
-                  <span
-                    class="block text-sm font-bold text-slate-900 dark:text-slate-100"
-                    >Bayar di Tempat</span
-                  >
-                  <span
-                    class="mt-1 flex items-center text-xs text-slate-500 dark:text-slate-400"
-                  >
-                    Cash on Delivery (COD)
-                  </span>
-                </span>
-              </span>
-              <CheckCircle2
-                :size="20"
-                :class="
-                  selectedPayment === 'cod'
-                    ? 'text-primary'
-                    : 'text-slate-300 dark:text-slate-600'
-                "
-              />
-            </label>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-bold">{{ item.menu.title }}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                  {{ item.quantity }}x
+                  <span v-if="item.temperature"> • {{ item.temperature }}</span>
+                </p>
+              </div>
+              <p class="text-sm font-semibold">
+                {{ formatPrice(item.menu.price * item.quantity) }}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Right Column: Order Summary -->
       <div class="lg:col-span-1">
         <div
-          class="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-md border border-primary/10 dark:border-primary/5 sticky top-24"
+          class="sticky top-24 rounded-xl border border-primary/10 bg-white p-6 shadow-md dark:border-primary/5 dark:bg-slate-900"
         >
-          <h3 class="text-xl font-bold mb-6">Order Summary</h3>
-          <div class="space-y-4 mb-6">
-            <!-- Item 1 -->
-            <div class="flex items-center gap-4">
-              <div
-                class="bg-center bg-no-repeat aspect-square bg-cover rounded-lg size-16 shrink-0"
-                style="
-                  background-image: url(&quot;https://lh3.googleusercontent.com/aida-public/AB6AXuAhJLiAtR1EEoF0fWXE3tJJaopzeT1MO-XAol2HTNo_ntIUiZPxi1y78XQu5oRp48AIHNEwo-Cei-UlGdryMoHUTGKOpgKIqzHD9caGg4wXdxsGFLcgCFPDwO2Rh9qYnBn4UzG6Y7CzrrMcXrxrIZW4S-6E718RAZiOfEYRspRsywAp-Q_ceJuhSOYvT89twi4EnGR-033QVY_uio3U1Km1raE0mbnxjyop5AurkEa0zdNUCE0nkhxHePxWz9nNlWe2IEnOg0Ta6BM&quot;);
-                "
-              />
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-bold leading-none mb-1">
-                  Caramel Macchiato
-                </p>
-                <p class="text-xs text-slate-500 dark:text-slate-400">
-                  1x - Regular Size
-                </p>
-                <p class="text-sm font-medium mt-1">Rp 35.000</p>
-              </div>
-            </div>
+          <h3 class="mb-6 text-xl font-bold">Ringkasan</h3>
 
-            <!-- Item 2 -->
-            <div class="flex items-center gap-4">
-              <div
-                class="bg-center bg-no-repeat aspect-square bg-cover rounded-lg size-16 shrink-0"
-                style="
-                  background-image: url(&quot;https://lh3.googleusercontent.com/aida-public/AB6AXuCCDxQmkB6jItkIaoiL4bYrsiL3kqUzRX57JsCfi7uIbYvwBI1W2Q0fwDWJzIV45SH5VqhsuiwUN7CQUVb2hlUL0BTAinzvvljXZdl1zudRT39oOSd1QosTkvgaeOjSgjIKho5xYUT_xuTXOPmQY8surXMER_egmTrLPmGvUBfv9KoYW1lBDoh8Bv2wkCGHDpfo2_Rno2RHhfFR2oUe1baZfTTU-SxcCRoy1kvar2SaF2DpJGw6Ozt-_pA99D_Rc8MwX9MFMBvExA4&quot;);
-                "
-              />
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-bold leading-none mb-1">
-                  Double Espresso
-                </p>
-                <p class="text-xs text-slate-500 dark:text-slate-400">
-                  1x - Shot
-                </p>
-                <p class="text-sm font-medium mt-1">Rp 28.000</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Totals -->
-          <div class="border-t border-primary/10 pt-4 space-y-2 text-sm">
+          <div class="space-y-2 border-t border-primary/10 pt-4 text-sm">
             <div class="flex justify-between">
               <span class="text-slate-500 dark:text-slate-400">Subtotal</span>
-              <span class="font-medium">Rp 63.000</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-slate-500 dark:text-slate-400"
-                >Delivery Fee</span
-              >
-              <span class="font-medium">Rp 10.000</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-slate-500 dark:text-slate-400"
-                >Service Fee</span
-              >
-              <span class="font-medium">Rp 2.000</span>
+              <span class="font-medium">{{ formatPrice(totalPrice) }}</span>
             </div>
             <div
-              class="flex justify-between text-lg font-bold pt-2 border-t border-dashed border-primary/20 mt-2"
+              class="mt-2 flex items-end justify-between border-t border-dashed border-primary/20 pt-3 text-lg font-bold"
             >
-              <span>Total Price</span>
-              <span class="text-primary">Rp 75.000</span>
+              <span>Total</span>
+              <span class="text-primary">{{ formatPrice(totalPrice) }}</span>
             </div>
           </div>
 
-          <button
-            class="w-full mt-8 bg-primary hover:scale-[1.02] text-background-dark font-bold py-4 rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
+          <p
+            v-if="errorMessage"
+            class="mt-4 text-sm font-semibold text-red-500"
           >
-            <span>Place Order</span>
+            {{ errorMessage }}
+          </p>
+
+          <button
+            class="mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-4 font-bold text-background-dark shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="!canCheckout"
+            @click="submitCheckout"
+          >
+            <span>{{ isSubmitting ? "Memproses..." : "Bayar" }}</span>
             <ArrowRight :size="18" />
           </button>
         </div>

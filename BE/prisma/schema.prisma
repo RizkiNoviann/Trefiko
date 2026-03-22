@@ -18,6 +18,17 @@ enum MenuCategory {
   SNACK
 }
 
+enum PaymentMethod {
+  COD
+  DIRECT
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESS
+  COMPLETED
+}
+
 model User {
   id         String   @id @default(cuid())
   name       String
@@ -25,6 +36,7 @@ model User {
   username   String?  @unique
   password   String
   role       UserRole @default(USER)
+  orders     Order[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
@@ -38,6 +50,42 @@ model Menu {
   price       Decimal      @db.Decimal(10, 2)
   status      Boolean      @default(true)
   favorite    Boolean      @default(false)
+  orderItems  OrderItem[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+}
+
+model Order {
+  id          String        @id @default(cuid())
+  code        String        @unique
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment     PaymentMethod
+  status      OrderStatus   @default(PENDING)
+  note        String?
+  hiddenByUser Boolean      @default(false)
+  totalAmount Decimal       @db.Decimal(10, 2)
+  items       OrderItem[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([userId, status])
+  @@index([userId, hiddenByUser, status])
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuId      String
+  menu        Menu     @relation(fields: [menuId], references: [id], onDelete: Restrict)
+  quantity    Int
+  temperature String?
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  lineTotal   Decimal  @db.Decimal(10, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([menuId])
 }

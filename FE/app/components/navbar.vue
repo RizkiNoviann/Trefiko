@@ -17,19 +17,30 @@ const { user, token, isAuthenticated, userInitials, fetchMe, logout } =
   useAuth();
 
 const accountPath = computed(() => {
-  if (!isAuthenticated.value) {
-    return "/auth/login";
-  }
-
-  if (user.value?.role === "ADMIN") {
-    return "/dashboard/home";
-  }
-
+  if (!isAuthenticated.value) return "/auth/login";
+  if (user.value?.role === "ADMIN") return "/dashboard/home";
   return "/";
 });
 
 function closeMobileMenu() {
   mobileMenuOpen.value = false;
+}
+
+// Anchor scroll — works on home page, navigates + scrolls on other pages
+const router = useRouter();
+
+async function scrollToSection(id: string) {
+  closeMobileMenu();
+  if (route.path !== "/") {
+    await router.push("/");
+    // Wait for page to render before scrolling
+    await nextTick();
+    setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  } else {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+  }
 }
 
 const handleLogout = async () => {
@@ -38,7 +49,6 @@ const handleLogout = async () => {
   await navigateTo("/");
 };
 
-// Close dropdown when clicking outside
 const handleClickOutside = (event: MouseEvent) => {
   if (userDropdownOpen.value) {
     const dropdown = document.querySelector('[data-dropdown="account"]');
@@ -56,7 +66,6 @@ onMounted(async () => {
       // Middleware handles invalid session cleanup.
     }
   }
-
   document.addEventListener("click", handleClickOutside);
 });
 
@@ -87,7 +96,7 @@ onBeforeUnmount(() => {
           class="text-sm font-semibold hover:text-primary transition-colors"
           :class="route.path === '/' ? 'text-primary' : ''"
         >
-          Home
+          Beranda
         </NuxtLink>
         <NuxtLink
           to="/menu"
@@ -96,13 +105,24 @@ onBeforeUnmount(() => {
         >
           Menu
         </NuxtLink>
-        <NuxtLink
-          to="/chart"
+        <button
           class="text-sm font-semibold hover:text-primary transition-colors"
-          :class="route.path === '/chart' ? 'text-primary' : ''"
+          @click="scrollToSection('tentang-kami')"
+        >
+          Tentang
+        </button>
+        <button
+          class="text-sm font-semibold hover:text-primary transition-colors"
+          @click="scrollToSection('lokasi')"
         >
           Kontak
-        </NuxtLink>
+        </button>
+        <button
+          class="text-sm font-semibold hover:text-primary transition-colors"
+          @click="scrollToSection('ulasan')"
+        >
+          Ulasan
+        </button>
       </nav>
 
       <!-- Right Actions -->
@@ -131,7 +151,6 @@ onBeforeUnmount(() => {
             v-if="isAuthenticated && userDropdownOpen"
             class="absolute right-0 mt-2 w-48 bg-background-light dark:bg-background-dark rounded-xl border border-primary/10 shadow-lg overflow-hidden z-50"
           >
-            <!-- User Info -->
             <div class="px-4 py-3 border-b border-primary/10">
               <p
                 class="text-sm font-semibold text-slate-900 dark:text-slate-100"
@@ -142,8 +161,6 @@ onBeforeUnmount(() => {
                 {{ user?.email }}
               </p>
             </div>
-
-            <!-- Logout Button -->
             <button
               @click="handleLogout"
               class="w-full px-4 py-3 flex items-center gap-3 text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all"
@@ -153,6 +170,7 @@ onBeforeUnmount(() => {
             </button>
           </div>
         </div>
+
         <NuxtLink
           v-if="isAuthenticated"
           to="/chart"
@@ -185,7 +203,7 @@ onBeforeUnmount(() => {
           @click="closeMobileMenu"
         >
           <Home :size="18" />
-          Home
+          Beranda
         </NuxtLink>
         <NuxtLink
           to="/menu"
@@ -198,6 +216,27 @@ onBeforeUnmount(() => {
           <UtensilsCrossed :size="18" />
           Menu
         </NuxtLink>
+        <button
+          class="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-semibold hover:bg-primary/10 hover:text-primary transition-all w-full text-left"
+          @click="scrollToSection('tentang-kami')"
+        >
+          <Home :size="18" />
+          Tentang
+        </button>
+        <button
+          class="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-semibold hover:bg-primary/10 hover:text-primary transition-all w-full text-left"
+          @click="scrollToSection('lokasi')"
+        >
+          <Home :size="18" />
+          Kontak
+        </button>
+        <button
+          class="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-semibold hover:bg-primary/10 hover:text-primary transition-all w-full text-left"
+          @click="scrollToSection('ulasan')"
+        >
+          <Home :size="18" />
+          Ulasan
+        </button>
         <NuxtLink
           v-if="isAuthenticated"
           to="/chart"

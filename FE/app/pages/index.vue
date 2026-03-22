@@ -7,11 +7,23 @@ import {
   Sofa,
   ChevronLeft,
   ChevronRight,
+  MapPin,
+  Phone,
+  Mail,
+  Instagram,
+  MessageCircle,
+  Navigation,
+  ExternalLink,
 } from "lucide-vue-next";
 
 useSeoMeta({
   title: "Cafe Trefiko - Kesegaran Kopi Pilihan",
 });
+
+const waNumber = "082110737645";
+const waLink = `https://wa.me/62${waNumber.replace(/^0/, "")}?text=Halo%20Cafe%20Trefiko%2C%20saya%20ingin%20bertanya%20tentang%20reservasi%20meja.`;
+const mapsLink =
+  "https://maps.google.com/?q=Trefiko+Gd+611+JATSC+Sukaasih+Tangerang";
 </script>
 
 <template>
@@ -56,11 +68,6 @@ useSeoMeta({
           >
             Lihat Menu
           </NuxtLink>
-          <button
-            class="px-8 py-4 rounded-xl border-2 border-primary/30 font-bold text-lg hover:bg-primary/10 transition-all"
-          >
-            Reservasi
-          </button>
         </div>
       </div>
     </div>
@@ -136,8 +143,190 @@ useSeoMeta({
     </div>
   </section>
 
+  <!-- ===== Location & Contact Section ===== -->
+  <section id="lokasi" class="px-6 lg:px-40 py-20">
+    <div class="max-w-[1280px] mx-auto flex flex-col gap-12">
+      <!-- Section header -->
+      <div class="flex flex-col gap-4 items-start">
+        <h2 class="text-4xl font-black tracking-tight">
+          Lokasi &amp; Kontak Kami
+        </h2>
+        <div class="h-1.5 w-20 bg-primary rounded-full" />
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+        <!-- Left: Contact info + CTA -->
+        <div class="flex flex-col gap-8">
+          <!-- Info grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <!-- Alamat -->
+            <div class="flex flex-col gap-2">
+              <div
+                class="flex items-center gap-2 text-primary font-bold text-sm"
+              >
+                <MapPin :size="16" />
+                Alamat
+              </div>
+              <p
+                class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed"
+              >
+                Gd 611 JATSC, Sukaasih,<br />
+                Kec. Tangerang, Kota Tangerang,<br />
+                Banten 15111
+              </p>
+            </div>
+
+            <!-- Telepon / WhatsApp -->
+            <div class="flex flex-col gap-2">
+              <div
+                class="flex items-center gap-2 text-primary font-bold text-sm"
+              >
+                <Phone :size="16" />
+                Telepon / WhatsApp
+              </div>
+              <a
+                :href="waLink"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-slate-600 dark:text-slate-400 text-sm hover:text-primary transition-colors"
+              >
+                +62 821-1073-7645
+              </a>
+            </div>
+
+            <!-- Email -->
+            <div class="flex flex-col gap-2">
+              <div
+                class="flex items-center gap-2 text-primary font-bold text-sm"
+              >
+                <Mail :size="16" />
+                Email
+              </div>
+              <a
+                href="mailto:halo@trefiko.com"
+                class="text-slate-600 dark:text-slate-400 text-sm hover:text-primary transition-colors"
+              >
+                halo@trefiko.com
+              </a>
+            </div>
+
+            <!-- Sosial Media -->
+            <div class="flex flex-col gap-3">
+              <div
+                class="flex items-center gap-2 text-primary font-bold text-sm"
+              >
+                <Instagram :size="16" />
+                Sosial Media
+              </div>
+              <a
+                href="https://instagram.com/cafetrefiko"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-2.5 w-fit group"
+              >
+                <!-- Instagram gradient icon -->
+                <div
+                  class="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-md transition-transform group-hover:scale-110"
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      #f09433 0%,
+                      #e6683c 25%,
+                      #dc2743 50%,
+                      #cc2366 75%,
+                      #bc1888 100%
+                    );
+                  "
+                >
+                  <Instagram :size="18" />
+                </div>
+                <span
+                  class="text-sm font-semibold text-slate-600 dark:text-slate-400 group-hover:text-primary transition-colors"
+                >
+                  @cafetrefiko
+                </span>
+              </a>
+            </div>
+          </div>
+
+          <!-- CTA Card -->
+          <div
+            class="rounded-2xl bg-primary/10 border border-primary/20 p-6 flex flex-col gap-4"
+          >
+            <div>
+              <p
+                class="text-xs font-black uppercase tracking-widest text-primary mb-1"
+              >
+                Butuh Informasi Lebih Lanjut?
+              </p>
+              <p
+                class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed"
+              >
+                Tim kami siap melayani reservasi meja atau pertanyaan seputar
+                menu melalui WhatsApp.
+              </p>
+            </div>
+            <a
+              :href="waLink"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center justify-center gap-2.5 w-full sm:w-fit px-6 py-3.5 rounded-xl bg-primary text-background-dark font-bold text-sm shadow-lg shadow-primary/25 hover:-translate-y-0.5 hover:brightness-105 transition-all active:scale-[0.98]"
+            >
+              <MessageCircle :size="18" />
+              Hubungi Kami Sekarang
+            </a>
+          </div>
+        </div>
+
+        <!-- Right: Maps embed -->
+        <div
+          class="flex flex-col gap-0 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-xl"
+        >
+          <!-- Map iframe -->
+          <div class="relative w-full" style="height: 320px">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.6804255648963!2d106.6339237731665!3d-6.173523360492528!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f9a3e4f45783%3A0xb0fa22bf551a4027!2sTrefiko!5e0!3m2!1sid!2sid!4v1774147167295!5m2!1sid!2sid"
+              width="100%"
+              height="100%"
+              style="border: 0; display: block"
+              allowfullscreen
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+            />
+          </div>
+
+          <!-- Map footer bar -->
+          <div
+            class="flex items-center justify-between px-5 py-4 bg-white dark:bg-slate-900"
+          >
+            <div>
+              <p
+                class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5"
+              >
+                Destinasi
+              </p>
+              <p class="text-sm font-bold text-slate-800 dark:text-slate-100">
+                Cafe Trefiko Tangerang
+              </p>
+            </div>
+            <a
+              :href="mapsLink"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-background-dark font-bold text-xs shadow-md shadow-primary/20 hover:-translate-y-0.5 transition-all active:scale-95"
+            >
+              <Navigation :size="14" />
+              Petunjuk Arah
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- ===== End Location & Contact Section ===== -->
+
   <!-- Testimonials Section -->
-  <section class="px-6 lg:px-40 py-24">
+  <section id="ulasan" class="px-6 lg:px-40 py-24 bg-primary/5">
     <div class="max-w-[1280px] mx-auto flex flex-col gap-16">
       <div
         class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6"
