@@ -31,6 +31,12 @@ export default defineNuxtConfig({
 
   compatibilityDate: '2025-01-15',
 
+  colorMode: {
+    preference: 'light',
+    fallback: 'light',
+    classSuffix: ''
+  },
+
   eslint: {
     config: {
       stylistic: {

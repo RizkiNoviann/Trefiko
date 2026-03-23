@@ -5,9 +5,11 @@ import {
   ArrowRight,
   CheckCircle2,
   CreditCard,
+  Star,
 } from "lucide-vue-next";
 import { useCart } from "~/composable/useCart";
 import { useOrder } from "~/composable/useOrder";
+import { useReview } from "~/composable/useReview";
 import { useAuth } from "~/composable/useAuth";
 import type { PaymentMethod } from "~/types/api";
 
@@ -20,11 +22,18 @@ const router = useRouter();
 const { isAuthenticated } = useAuth();
 const { cartItems, totalPrice, clearCart } = useCart();
 const { checkout } = useOrder();
+const { createReview } = useReview();
 
 const selectedPayment = ref<PaymentMethod>("COD");
 const orderNote = ref("");
 const isSubmitting = ref(false);
 const errorMessage = ref("");
+const showReviewModal = ref(false);
+const checkoutOrderId = ref("");
+const reviewRating = ref(5);
+const reviewComment = ref("");
+const isSubmittingReview = ref(false);
+const reviewErrorMessage = ref("");
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("id-ID", {
@@ -64,7 +73,7 @@ const submitCheckout = async () => {
   isSubmitting.value = true;
 
   try {
-    await checkout({
+    const response = await checkout({
       payment: selectedPayment.value,
       note: orderNote.value.trim() || undefined,
       items: cartItems.value.map((item) => ({
@@ -74,12 +83,43 @@ const submitCheckout = async () => {
       })),
     });
 
+    checkoutOrderId.value = response.order.id;
     clearCart();
-    await router.push("/chart");
+    showReviewModal.value = true;
   } catch (error: any) {
     errorMessage.value = error?.message || "Checkout gagal";
   } finally {
     isSubmitting.value = false;
+  }
+};
+
+const closeReviewModal = async () => {
+  showReviewModal.value = false;
+  await router.push("/chart");
+};
+
+const submitReview = async () => {
+  reviewErrorMessage.value = "";
+
+  if (!reviewComment.value.trim()) {
+    reviewErrorMessage.value = "Ulasan wajib diisi.";
+    return;
+  }
+
+  isSubmittingReview.value = true;
+
+  try {
+    await createReview({
+      orderId: checkoutOrderId.value,
+      rating: reviewRating.value,
+      comment: reviewComment.value.trim(),
+    });
+
+    await closeReviewModal();
+  } catch (error: any) {
+    reviewErrorMessage.value = error?.message || "Gagal mengirim ulasan";
+  } finally {
+    isSubmittingReview.value = false;
   }
 };
 </script>
@@ -248,6 +288,68 @@ const submitCheckout = async () => {
             <ArrowRight :size="18" />
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    v-if="showReviewModal"
+    class="fixed inset-0 z-80 flex items-center justify-center bg-slate-950/60 px-4"
+  >
+    <div
+      class="w-full max-w-md rounded-2xl border border-primary/20 bg-white p-6 shadow-2xl dark:bg-slate-900"
+    >
+      <h3 class="text-xl font-black">Pesanan berhasil dibuat</h3>
+      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+        Bantu kami dengan ulasan singkat setelah klik Bayar.
+      </p>
+
+      <div class="mt-5 flex items-center gap-2">
+        <button
+          v-for="star in 5"
+          :key="star"
+          type="button"
+          class="rounded-lg p-1 transition hover:scale-110"
+          @click="reviewRating = star"
+        >
+          <Star
+            :size="24"
+            :class="
+              star <= reviewRating
+                ? 'fill-primary text-primary'
+                : 'text-slate-300 dark:text-slate-600'
+            "
+          />
+        </button>
+      </div>
+
+      <textarea
+        v-model="reviewComment"
+        rows="4"
+        placeholder="Tulis pengalaman kamu di Cafe Trefiko..."
+        class="mt-4 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary dark:border-slate-700 dark:bg-slate-800"
+      />
+
+      <p v-if="reviewErrorMessage" class="mt-2 text-sm text-red-500">
+        {{ reviewErrorMessage }}
+      </p>
+
+      <div class="mt-5 flex items-center justify-end gap-3">
+        <button
+          type="button"
+          class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+          @click="closeReviewModal"
+        >
+          Lewati
+        </button>
+        <button
+          type="button"
+          class="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-background-dark shadow-lg shadow-primary/20 disabled:opacity-60"
+          :disabled="isSubmittingReview"
+          @click="submitReview"
+        >
+          {{ isSubmittingReview ? "Mengirim..." : "Kirim Ulasan" }}
+        </button>
       </div>
     </div>
   </div>

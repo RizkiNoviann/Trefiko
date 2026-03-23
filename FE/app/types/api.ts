@@ -127,3 +127,42 @@ export interface OrdersResponse extends ApiMessageResponse {
 export interface OrderResponse extends ApiMessageResponse {
   order: Order;
 }
+
+export interface Review {
+  id: string;
+  userId: string;
+  orderId: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    name: string;
+    email?: string;
+  };
+  order?: {
+    id: string;
+    code: string;
+  };
+}
+
+export interface CreateReviewPayload {
+  orderId: string;
+  rating: number;
+  comment: string;
+}
+
+export interface ReviewResponse extends ApiMessageResponse {
+  review: Review;
+}
+
+export interface PublicReviewsResponse extends ApiMessageResponse {
+  reviews: Review[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
+export interface AdminReviewsResponse extends ApiMessageResponse {
+  reviews: Review[];
+}

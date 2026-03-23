@@ -1,20 +1,21 @@
 <script setup lang="ts">
+import { computed, onMounted, ref } from "vue";
 import {
   Star,
-  StarHalf,
+  ChevronLeft,
+  ChevronRight,
   Coffee,
   Leaf,
   Sofa,
-  ChevronLeft,
-  ChevronRight,
   MapPin,
   Phone,
   Mail,
   Instagram,
   MessageCircle,
   Navigation,
-  ExternalLink,
 } from "lucide-vue-next";
+import { useReview } from "~/composable/useReview";
+import type { Review } from "~/types/api";
 
 useSeoMeta({
   title: "Cafe Trefiko - Kesegaran Kopi Pilihan",
@@ -24,6 +25,126 @@ const waNumber = "082110737645";
 const waLink = `https://wa.me/62${waNumber.replace(/^0/, "")}?text=Halo%20Cafe%20Trefiko%2C%20saya%20ingin%20bertanya%20tentang%20reservasi%20meja.`;
 const mapsLink =
   "https://maps.google.com/?q=Trefiko+Gd+611+JATSC+Sukaasih+Tangerang";
+
+const { listPublicReviews } = useReview();
+
+const DISPLAY_COUNT = 3;
+const FETCH_LIMIT = 6;
+
+const reviews = ref<Review[]>([]);
+const nextCursor = ref<string | null>(null);
+const hasMoreReviews = ref(true);
+const isLoadingReviews = ref(false);
+const reviewErrorMessage = ref("");
+const currentStartIndex = ref(0);
+
+const normalizedStartIndex = computed(() => {
+  const total = reviews.value.length;
+  if (total === 0) {
+    return 0;
+  }
+
+  return ((currentStartIndex.value % total) + total) % total;
+});
+
+const visibleReviews = computed(() => {
+  const total = reviews.value.length;
+  if (total === 0) {
+    return [];
+  }
+
+  const count = Math.min(DISPLAY_COUNT, total);
+
+  return Array.from({ length: count }, (_, offset) => {
+    const index = (normalizedStartIndex.value + offset) % total;
+    return reviews.value[index];
+  });
+});
+
+const canNavigate = computed(() => reviews.value.length > 1);
+
+const getInitials = (name: string) => {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+};
+
+const formatReviewDate = (value: string) => {
+  const parts = new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).formatToParts(new Date(value));
+
+  const day = parts.find((part) => part.type === "day")?.value ?? "";
+  const month =
+    parts.find((part) => part.type === "month")?.value.toLowerCase() ?? "";
+  const year = parts.find((part) => part.type === "year")?.value ?? "";
+
+  return `${day} ${month} ${year}`.trim();
+};
+
+const fetchMoreReviews = async () => {
+  if (isLoadingReviews.value || !hasMoreReviews.value) {
+    return;
+  }
+
+  isLoadingReviews.value = true;
+  reviewErrorMessage.value = "";
+
+  try {
+    const response = await listPublicReviews(
+      nextCursor.value ?? undefined,
+      FETCH_LIMIT,
+    );
+    reviews.value = [...reviews.value, ...response.reviews];
+    nextCursor.value = response.nextCursor;
+    hasMoreReviews.value = response.hasMore;
+  } catch (error: any) {
+    reviewErrorMessage.value = error?.message || "Gagal memuat ulasan";
+  } finally {
+    isLoadingReviews.value = false;
+  }
+};
+
+const goPrevReview = () => {
+  if (!canNavigate.value) {
+    return;
+  }
+
+  currentStartIndex.value -= 1;
+
+  if (hasMoreReviews.value && !isLoadingReviews.value) {
+    const remainingLoaded =
+      reviews.value.length - (normalizedStartIndex.value + DISPLAY_COUNT);
+    if (remainingLoaded <= 1) {
+      void fetchMoreReviews();
+    }
+  }
+};
+
+const goNextReview = () => {
+  if (!canNavigate.value) {
+    return;
+  }
+
+  currentStartIndex.value += 1;
+
+  if (hasMoreReviews.value && !isLoadingReviews.value) {
+    const remainingLoaded =
+      reviews.value.length - (normalizedStartIndex.value + DISPLAY_COUNT);
+    if (remainingLoaded <= 1) {
+      void fetchMoreReviews();
+    }
+  }
+};
+
+onMounted(async () => {
+  await fetchMoreReviews();
+});
 </script>
 
 <template>
@@ -339,111 +460,125 @@ const mapsLink =
         </div>
         <div class="flex gap-2">
           <button
-            class="w-12 h-12 rounded-full border border-primary/20 flex items-center justify-center hover:bg-primary/10 transition-colors"
+            class="w-12 h-12 rounded-full border border-primary/20 flex items-center justify-center transition-colors"
+            :class="
+              canNavigate
+                ? 'hover:bg-primary/10'
+                : 'cursor-not-allowed opacity-40'
+            "
+            :disabled="!canNavigate"
+            @click="goPrevReview"
           >
             <ChevronLeft :size="20" />
           </button>
           <button
-            class="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-background-dark shadow-lg shadow-primary/20"
+            class="w-12 h-12 rounded-full flex items-center justify-center transition-colors"
+            :class="
+              canNavigate
+                ? 'bg-primary text-background-dark shadow-lg shadow-primary/20'
+                : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+            "
+            :disabled="!canNavigate"
+            @click="goNextReview"
           >
             <ChevronRight :size="20" />
           </button>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <!-- Review 1 -->
-        <div
-          class="bg-background-light dark:bg-background-dark p-8 rounded-3xl border border-primary/5 shadow-xl shadow-slate-200/50 dark:shadow-none flex flex-col gap-6"
-        >
-          <div class="flex gap-1 text-primary">
-            <Star :size="18" fill="currentColor" />
-            <Star :size="18" fill="currentColor" />
-            <Star :size="18" fill="currentColor" />
-            <Star :size="18" fill="currentColor" />
-            <Star :size="18" fill="currentColor" />
-          </div>
-          <p
-            class="text-lg italic text-slate-700 dark:text-slate-300 leading-relaxed"
-          >
-            "Tempatnya sangat nyaman, kopinya juara! Cocok banget buat kerja
-            remote atau sekadar ngobrol santai sore hari."
-          </p>
-          <div class="flex items-center gap-4 mt-auto">
-            <div
-              class="w-12 h-12 rounded-full bg-cover bg-center border-2 border-primary/20 shrink-0"
-              style="
-                background-image: url(&quot;https://lh3.googleusercontent.com/aida-public/AB6AXuB0gr5SJNiSL0UagAeUE5qadfA0cZXGn_hjygyoRiUik3VKsUmkoWEU1NvbVstNQZbjkiKlu15Kv_3QPBeD-eI63Oi_Noozvd2WFYpP5Q8ZdAP9AnrM3-cpiECNZ0lLbsa7bnHjZrRmQbpZc8MD5TArJwY9AdIov7kujbh-VjQtoT6p9BgfKICsoJi0pikzdhGuBMXYn28xwvDja5TRvzkTsluhlk75LlYOcCV8gq2dGRdy6NHM003I25kEoeMry0oLN5cDtDJd2kc&quot;);
-              "
-            />
-            <div>
-              <h4 class="font-bold">Andi Pratama</h4>
-              <p class="text-sm text-slate-500">2 hari yang lalu</p>
-            </div>
-          </div>
-        </div>
+      <div
+        v-if="reviewErrorMessage"
+        class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300"
+      >
+        {{ reviewErrorMessage }}
+      </div>
 
-        <!-- Review 2 -->
+      <div
+        v-if="reviews.length === 0 && isLoadingReviews"
+        class="grid grid-cols-1 md:grid-cols-3 gap-8"
+      >
         <div
+          v-for="skeleton in 3"
+          :key="`review-skeleton-${skeleton}`"
           class="bg-background-light dark:bg-background-dark p-8 rounded-3xl border border-primary/5 shadow-xl shadow-slate-200/50 dark:shadow-none flex flex-col gap-6"
         >
-          <div class="flex gap-1 text-primary">
-            <Star :size="18" fill="currentColor" />
-            <Star :size="18" fill="currentColor" />
-            <Star :size="18" fill="currentColor" />
-            <Star :size="18" fill="currentColor" />
-            <Star :size="18" fill="currentColor" />
-          </div>
-          <p
-            class="text-lg italic text-slate-700 dark:text-slate-300 leading-relaxed"
-          >
-            "Suka banget sama konsep hijaunya. Makanan ringannya juga enak-enak,
-            favorit saya croissant kejunya. Pelayanan super ramah!"
-          </p>
-          <div class="flex items-center gap-4 mt-auto">
+          <div
+            class="h-4 w-28 animate-pulse rounded bg-slate-200 dark:bg-slate-700"
+          />
+          <div class="space-y-2">
             <div
-              class="w-12 h-12 rounded-full bg-cover bg-center border-2 border-primary/20 shrink-0"
-              style="
-                background-image: url(&quot;https://lh3.googleusercontent.com/aida-public/AB6AXuAhqaQ0rT1QXVzyiHmZQl8ePxEEg94KCq-G0coxS4RYLLqStP8fTitKsBmt4ckmZENPeb-ysCRcRRRqd4YmWP8ajpTaonnOaAW-nMjHhTuTJKZjGsXbkJhXnD1fOKFgrl_xs6BjTMIqQU5sR9GcNRgz1Mu2k2Nr7drMTMYKDOoFiZLfZ0xXPD7hsOoZlbZQZ28GtFoEiaZlbWTQuNm9GkhlKE-xH5zhcXcvwvFULq9pC_rxRY-ZhYiF2JQCxAq7sqXyqckN44qjuoA&quot;);
-              "
+              class="h-3 animate-pulse rounded bg-slate-200 dark:bg-slate-700"
             />
-            <div>
-              <h4 class="font-bold">Siti Aminah</h4>
-              <p class="text-sm text-slate-500">1 minggu yang lalu</p>
+            <div
+              class="h-3 w-11/12 animate-pulse rounded bg-slate-200 dark:bg-slate-700"
+            />
+            <div
+              class="h-3 w-9/12 animate-pulse rounded bg-slate-200 dark:bg-slate-700"
+            />
+          </div>
+          <div class="mt-auto flex items-center gap-4">
+            <div
+              class="h-12 w-12 animate-pulse rounded-full bg-slate-200 dark:bg-slate-700"
+            />
+            <div class="space-y-2">
+              <div
+                class="h-3 w-24 animate-pulse rounded bg-slate-200 dark:bg-slate-700"
+              />
+              <div
+                class="h-3 w-20 animate-pulse rounded bg-slate-200 dark:bg-slate-700"
+              />
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Review 3 -->
+      <div
+        v-else-if="visibleReviews.length > 0"
+        class="grid grid-cols-1 md:grid-cols-3 gap-8"
+      >
         <div
+          v-for="review in visibleReviews"
+          :key="review.id"
           class="bg-background-light dark:bg-background-dark p-8 rounded-3xl border border-primary/5 shadow-xl shadow-slate-200/50 dark:shadow-none flex flex-col gap-6"
         >
           <div class="flex gap-1 text-primary">
-            <Star :size="18" fill="currentColor" />
-            <Star :size="18" fill="currentColor" />
-            <Star :size="18" fill="currentColor" />
-            <Star :size="18" fill="currentColor" />
-            <StarHalf :size="18" fill="currentColor" />
+            <Star
+              v-for="i in 5"
+              :key="i"
+              :size="18"
+              :class="
+                i <= review.rating
+                  ? 'fill-current'
+                  : 'text-slate-300 dark:text-slate-600'
+              "
+            />
           </div>
           <p
             class="text-lg italic text-slate-700 dark:text-slate-300 leading-relaxed"
           >
-            "Vibe-nya dapet banget, modern tapi tetep asri. Kopinya konsisten
-            enaknya. Pasti bakal jadi langganan tetap di sini."
+            "{{ review.comment }}"
           </p>
           <div class="flex items-center gap-4 mt-auto">
             <div
-              class="w-12 h-12 rounded-full bg-cover bg-center border-2 border-primary/20 shrink-0"
-              style="
-                background-image: url(&quot;https://lh3.googleusercontent.com/aida-public/AB6AXuA9P27bmVUitP-HUICtUtLx_Xli7wydyp-fHBKvyby8lP5G0PwzpTYXC2YM05i5KmLtTr1ZMK8-ASMLwpPG6u-oPWYmDaonOTrSuxGVL6BLDkwll6wjD-3bz3_WZXtXWnIPsUm36KNvxJfJ6YVqDFS96iXJzF3s2GNxx9miViI5BT5B6t-omMeSGxJaJ5QIUkSxxXKeZrXATbhMHdgjFsTHqJVOpQgthp_JfQzKgDJNpjQyk0tCunctPh_8dUM8nVXNTz5zUuUbb7k&quot;);
-              "
-            />
+              class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-primary/20 bg-primary/10 text-sm font-black text-primary"
+            >
+              {{ getInitials(review.user.name) }}
+            </div>
             <div>
-              <h4 class="font-bold">Budi Santoso</h4>
-              <p class="text-sm text-slate-500">2 minggu yang lalu</p>
+              <h4 class="font-bold">{{ review.user.name }}</h4>
+              <p class="text-sm text-slate-500">
+                {{ formatReviewDate(review.createdAt) }}
+              </p>
             </div>
           </div>
         </div>
+      </div>
+
+      <div
+        v-if="isLoadingReviews && reviews.length > 0"
+        class="text-center text-sm text-slate-500"
+      >
+        Memuat data ulasan berikutnya...
       </div>
     </div>
   </section>

@@ -7,14 +7,24 @@ import {
   Home,
   UtensilsCrossed,
   LogOut,
+  Moon,
+  Sun,
+  LogIn,
 } from "lucide-vue-next";
 import { useAuth } from "../composable/useAuth";
 
 const mobileMenuOpen = ref(false);
 const userDropdownOpen = ref(false);
 const route = useRoute();
+const colorMode = useColorMode();
 const { user, token, isAuthenticated, userInitials, fetchMe, logout } =
   useAuth();
+
+const isDarkMode = computed(() => colorMode.value === "dark");
+
+const toggleTheme = () => {
+  colorMode.preference = isDarkMode.value ? "light" : "dark";
+};
 
 const accountPath = computed(() => {
   if (!isAuthenticated.value) return "/auth/login";
@@ -86,7 +96,7 @@ onBeforeUnmount(() => {
         to="/"
         class="text-xl font-extrabold tracking-tight hover:text-primary transition-colors"
       >
-        Cafe Trefiko
+        Trefiko
       </NuxtLink>
 
       <!-- Desktop Nav -->
@@ -127,7 +137,7 @@ onBeforeUnmount(() => {
 
       <!-- Right Actions -->
       <div class="flex items-center gap-3 relative">
-        <!-- Account Button/Dropdown -->
+        <!-- Account Button/Dropdown (when authenticated) -->
         <div class="relative" data-dropdown="account">
           <button
             v-if="isAuthenticated"
@@ -138,18 +148,11 @@ onBeforeUnmount(() => {
               {{ userInitials }}
             </span>
           </button>
-          <NuxtLink
-            v-else
-            :to="accountPath"
-            class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 hover:bg-primary/20 transition-all text-slate-900 dark:text-slate-100"
-          >
-            <User :size="20" />
-          </NuxtLink>
 
-          <!-- Dropdown Menu -->
+          <!-- Dropdown Menu (only when authenticated) -->
           <div
             v-if="isAuthenticated && userDropdownOpen"
-            class="absolute right-0 mt-2 w-48 bg-background-light dark:bg-background-dark rounded-xl border border-primary/10 shadow-lg overflow-hidden z-50"
+            class="absolute right-0 mt-2 w-56 bg-background-light dark:bg-background-dark rounded-xl border border-primary/10 shadow-lg overflow-hidden z-50"
           >
             <div class="px-4 py-3 border-b border-primary/10">
               <p
@@ -162,6 +165,15 @@ onBeforeUnmount(() => {
               </p>
             </div>
             <button
+              @click="toggleTheme"
+              class="w-full px-4 py-3 flex items-center justify-between gap-3 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-primary/10 transition-all"
+            >
+              <span class="inline-flex items-center gap-3">
+                <component :is="isDarkMode ? Sun : Moon" :size="18" />
+                {{ isDarkMode ? "Light Mode" : "Dark Mode" }}
+              </span>
+            </button>
+            <button
               @click="handleLogout"
               class="w-full px-4 py-3 flex items-center gap-3 text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all"
             >
@@ -170,6 +182,23 @@ onBeforeUnmount(() => {
             </button>
           </div>
         </div>
+
+        <!-- Login Button & Theme Toggle (when not authenticated) -->
+        <template v-if="!isAuthenticated">
+          <NuxtLink
+            :to="accountPath"
+            class="flex h-10 px-4 items-center gap-2 rounded-xl bg-primary text-background-dark hover:shadow-lg hover:shadow-primary/20 transition-all font-semibold text-sm"
+          >
+            <LogIn :size="18" />
+            Login
+          </NuxtLink>
+          <button
+            @click="toggleTheme"
+            class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 hover:bg-primary/20 transition-all text-slate-900 dark:text-slate-100"
+          >
+            <component :is="isDarkMode ? Sun : Moon" :size="18" />
+          </button>
+        </template>
 
         <NuxtLink
           v-if="isAuthenticated"
@@ -180,6 +209,14 @@ onBeforeUnmount(() => {
         </NuxtLink>
 
         <!-- Mobile Hamburger -->
+        <button
+          @click="toggleTheme"
+          class="md:hidden flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-primary/10 hover:bg-primary/20 transition-all"
+        >
+          <component :is="isDarkMode ? Sun : Moon" :size="15" />
+          {{ isDarkMode ? "LIGHT" : "DARK" }}
+        </button>
+
         <button
           class="md:hidden flex items-center justify-center h-10 w-10 rounded-xl hover:bg-primary/10 transition-all"
           @click="mobileMenuOpen = !mobileMenuOpen"

@@ -85,7 +85,7 @@ import { Globe, Mail, Phone } from "lucide-vue-next";
         </div>
         <div class="p-4 rounded-xl bg-primary/10 border border-primary/20">
           <p class="text-sm font-medium text-primary">
-            Jl. Hijau Segar No. 42, Jakarta Pusat
+            Gd 611 JATSC, Sukaasih, Kec. Tangerang, Kota Tangerang, Banten 15111
           </p>
         </div>
       </div>
