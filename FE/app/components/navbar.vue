@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { ShoppingCart, LogOut, Moon, Sun, LogIn } from "lucide-vue-next";
+import {
+  ShoppingCart,
+  LogOut,
+  Moon,
+  Sun,
+  LogIn,
+  Menu,
+  X,
+} from "lucide-vue-next";
 import { useAuth } from "../composable/useAuth";
 
 const mobileMenuOpen = ref(false);
@@ -193,12 +201,15 @@ onBeforeUnmount(() => {
 
         <!-- Mobile Hamburger -->
         <button
-          class="md:hidden flex items-center justify-center h-10 rounded-xl px-3 hover:bg-primary/10 transition-all"
+          class="md:hidden flex items-center justify-center h-10 w-10 rounded-xl hover:bg-primary/10 transition-all"
           @click="mobileMenuOpen = !mobileMenuOpen"
         >
-          <span class="text-xs font-bold">{{
-            mobileMenuOpen ? "Tutup" : "Menu"
-          }}</span>
+          <Menu
+            v-if="!mobileMenuOpen"
+            :size="24"
+            class="text-slate-900 dark:text-slate-100"
+          />
+          <X v-else :size="24" class="text-slate-900 dark:text-slate-100" />
         </button>
       </div>
     </div>
