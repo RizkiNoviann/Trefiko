@@ -5,9 +5,10 @@ import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { AppModule } from './app.module';
 
+const imageDir = process.env.VERCEL === '1' ? '/tmp/image' : join(process.cwd(), 'src', 'image');
+
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  const imageDir = join(process.cwd(), 'src', 'image');
 
   if (!existsSync(imageDir)) {
     mkdirSync(imageDir, { recursive: true });
