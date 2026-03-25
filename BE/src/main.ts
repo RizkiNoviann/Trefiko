@@ -1,11 +1,18 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 import { resolveUploadImageDir } from './image/upload-dir.util';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bodyParser: false,
+  });
+
+  app.use(json({ limit: '8mb' }));
+  app.use(urlencoded({ extended: true, limit: '8mb' }));
+
   const configuredOrigins = (process.env.FRONTEND_URL ?? '')
     .split(',')
     .map((origin) => origin.trim())

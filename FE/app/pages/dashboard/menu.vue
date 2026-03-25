@@ -417,7 +417,7 @@ onMounted(fetchMenus);
                 />
               </label>
               <p class="mt-2 text-xs text-slate-500">
-                Maksimal 5MB. Format gambar apa pun.
+                Maksimal 2MB. Format gambar apa pun.
               </p>
               <img
                 v-if="imagePreview"
