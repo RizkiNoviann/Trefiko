@@ -1,21 +1,41 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
-import { ArrowRight, PackageSearch, Trash2 } from "lucide-vue-next";
+import { computed, onMounted, ref, watch } from "vue";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Hourglass,
+  PackageSearch,
+  Timer,
+} from "lucide-vue-next";
 import { useOrder } from "~/composable/useOrder";
-import type { Order } from "~/types/api";
+import type { Order, UserOrderStatus } from "~/types/api";
 
 useSeoMeta({
   title: "Pesanan Saya | Cafe Trefiko",
 });
 
 const config = useRuntimeConfig();
-const { listMyOrders, hideMyCompletedOrder } = useOrder();
+const route = useRoute();
+const { listMyOrders } = useOrder();
 
 const isLoading = ref(false);
 const errorMessage = ref("");
 const orders = ref<Order[]>([]);
 const expandedOrders = ref<Set<string>>(new Set());
-const deletingOrderId = ref("");
+const activeTab = ref<UserOrderStatus>("PENDING");
+
+const resolveStatusFromQuery = (
+  statusQuery: string | string[] | undefined,
+): UserOrderStatus => {
+  const raw = Array.isArray(statusQuery) ? statusQuery[0] : statusQuery;
+  const normalized = (raw || "").toUpperCase();
+
+  if (normalized === "PROCESS" || normalized === "COMPLETED") {
+    return normalized;
+  }
+
+  return "PENDING";
+};
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("id-ID", {
@@ -34,12 +54,64 @@ const formatDate = (value: string) => {
   });
 };
 
-const processOrders = computed(() =>
-  orders.value.filter((order) => order.userStatus === "PROCESS"),
+const filteredOrders = computed(() =>
+  orders.value.filter((order) => order.userStatus === activeTab.value),
 );
-const doneOrders = computed(() =>
-  orders.value.filter((order) => order.userStatus === "COMPLETED"),
-);
+
+const countByStatus = (status: UserOrderStatus) =>
+  orders.value.filter((order) => order.userStatus === status).length;
+
+const statusTitle = computed(() => {
+  if (activeTab.value === "PENDING") {
+    return "Pending";
+  }
+
+  if (activeTab.value === "PROCESS") {
+    return "Proses";
+  }
+
+  return "Selesai";
+});
+
+const statusDescription = computed(() => {
+  if (activeTab.value === "PENDING") {
+    return "Pesanan menunggu konfirmasi admin.";
+  }
+
+  if (activeTab.value === "PROCESS") {
+    return "Pesanan sedang diproses oleh admin.";
+  }
+
+  return "Pesanan sudah selesai.";
+});
+
+const statusCardClass = computed(() => {
+  if (activeTab.value === "PENDING") {
+    return "border-amber-200/60 dark:border-amber-900/40";
+  }
+
+  if (activeTab.value === "PROCESS") {
+    return "border-blue-200/60 dark:border-blue-900/40";
+  }
+
+  return "border-emerald-200/60 dark:border-emerald-900/40";
+});
+
+const statusBadgeClass = computed(() => {
+  if (activeTab.value === "PENDING") {
+    return "text-amber-600";
+  }
+
+  if (activeTab.value === "PROCESS") {
+    return "text-blue-600";
+  }
+
+  return "text-emerald-600";
+});
+
+const selectTab = (status: UserOrderStatus) => {
+  activeTab.value = status;
+};
 
 const toggleOrder = (orderId: string) => {
   if (expandedOrders.value.has(orderId)) {
@@ -66,20 +138,13 @@ const fetchOrders = async () => {
   }
 };
 
-const onHideCompletedOrder = async (orderId: string) => {
-  deletingOrderId.value = orderId;
-  errorMessage.value = "";
-
-  try {
-    await hideMyCompletedOrder(orderId);
-    orders.value = orders.value.filter((order) => order.id !== orderId);
-    expandedOrders.value.delete(orderId);
-  } catch (error: any) {
-    errorMessage.value = error?.message || "Gagal menghapus riwayat";
-  } finally {
-    deletingOrderId.value = "";
-  }
-};
+watch(
+  () => route.query.status,
+  (status) => {
+    activeTab.value = resolveStatusFromQuery(status);
+  },
+  { immediate: true },
+);
 
 onMounted(fetchOrders);
 </script>
@@ -95,7 +160,7 @@ onMounted(fetchOrders);
           <p
             class="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400"
           >
-            Status user: proses dan selesai
+            Menampilkan semua status pesanan: pending, proses, dan selesai
           </p>
         </div>
         <NuxtLink
@@ -123,174 +188,126 @@ onMounted(fetchOrders);
         class="flex flex-col items-center justify-center gap-4 py-20 text-slate-400"
       >
         <PackageSearch :size="48" class="text-primary/30" />
-        <p class="text-lg font-semibold">Belum ada pesanan yang diproses</p>
+        <p class="text-lg font-semibold">Belum ada pesanan</p>
       </div>
 
-      <div v-else class="space-y-8">
-        <section>
-          <div class="mb-3 flex items-center justify-between">
-            <h3 class="text-lg font-black">
-              Sedang Diproses ({{ processOrders.length }})
-            </h3>
-          </div>
-          <div class="space-y-3">
-            <div
-              v-for="order in processOrders"
-              :key="order.id"
-              class="rounded-xl border border-amber-200/50 bg-white p-4 shadow-sm dark:border-amber-900/40 dark:bg-slate-900/60"
-            >
-              <button
-                class="flex w-full items-start justify-between gap-4 text-left"
-                @click="toggleOrder(order.id)"
-              >
-                <div>
-                  <p
-                    class="text-xs font-bold uppercase tracking-wide text-amber-500"
-                  >
-                    Proses
-                  </p>
-                  <p class="text-base font-black">{{ order.code }}</p>
-                  <p class="text-xs text-slate-500">
-                    {{ formatDate(order.createdAt) }}
-                  </p>
-                </div>
-                <div class="text-right">
-                  <p class="text-sm font-semibold">
-                    {{ formatPrice(order.totalAmount) }}
-                  </p>
-                  <p class="text-xs text-slate-500">
-                    {{ order.items.length }} item
-                  </p>
-                </div>
-              </button>
+      <div v-else class="space-y-4">
+        <div class="mb-1 flex gap-3 overflow-x-auto">
+          <button
+            class="rounded-full px-4 py-2 text-sm font-bold transition"
+            :class="
+              activeTab === 'PENDING'
+                ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300'
+            "
+            @click="selectTab('PENDING')"
+          >
+            Pending ({{ countByStatus("PENDING") }})
+          </button>
+          <button
+            class="rounded-full px-4 py-2 text-sm font-bold transition"
+            :class="
+              activeTab === 'PROCESS'
+                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300'
+            "
+            @click="selectTab('PROCESS')"
+          >
+            Proses ({{ countByStatus("PROCESS") }})
+          </button>
+          <button
+            class="rounded-full px-4 py-2 text-sm font-bold transition"
+            :class="
+              activeTab === 'COMPLETED'
+                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300'
+            "
+            @click="selectTab('COMPLETED')"
+          >
+            Selesai ({{ countByStatus("COMPLETED") }})
+          </button>
+        </div>
 
-              <div
-                v-if="isExpanded(order.id)"
-                class="mt-4 space-y-2 border-t border-slate-100 pt-4 dark:border-slate-800"
+        <div
+          v-if="filteredOrders.length === 0"
+          class="rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-500 dark:border-slate-700"
+        >
+          Tidak ada pesanan pada kategori ini.
+        </div>
+
+        <div
+          v-for="order in filteredOrders"
+          :key="order.id"
+          class="rounded-xl border bg-white p-4 shadow-sm dark:bg-slate-900/60"
+          :class="statusCardClass"
+        >
+          <button
+            class="flex w-full items-start justify-between gap-4 text-left"
+            @click="toggleOrder(order.id)"
+          >
+            <div>
+              <p
+                class="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wide"
+                :class="statusBadgeClass"
               >
-                <div
-                  v-for="item in order.items"
-                  :key="item.id"
-                  class="flex items-center justify-between gap-3"
-                >
-                  <div class="flex min-w-0 items-center gap-3">
-                    <img
-                      :src="`${config.public.apiBaseUrl}${item.menu.image}`"
-                      :alt="item.menu.title"
-                      class="h-11 w-11 rounded-lg object-cover"
-                    />
-                    <p class="truncate text-sm">
-                      {{ item.quantity }}x {{ item.menu.title }}
-                      <span v-if="item.temperature" class="text-slate-400"
-                        >({{ item.temperature }})</span
-                      >
-                    </p>
-                  </div>
-                  <p class="text-sm font-semibold">
-                    {{ formatPrice(item.lineTotal) }}
-                  </p>
-                </div>
-                <div
-                  v-if="order.note"
-                  class="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-                >
-                  Catatan: {{ order.note }}
-                </div>
+                <Hourglass v-if="activeTab === 'PENDING'" :size="14" />
+                <Timer v-else-if="activeTab === 'PROCESS'" :size="14" />
+                <CheckCircle2 v-else :size="14" />
+                {{ statusTitle }}
+              </p>
+              <p class="text-base font-black">{{ order.code }}</p>
+              <p class="text-xs text-slate-500">
+                {{ formatDate(order.createdAt) }}
+              </p>
+            </div>
+            <div class="text-right">
+              <p class="text-sm font-semibold">
+                {{ formatPrice(order.totalAmount) }}
+              </p>
+              <p class="text-xs text-slate-500">
+                {{ order.items.length }} item
+              </p>
+            </div>
+          </button>
+
+          <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            {{ statusDescription }}
+          </p>
+
+          <div
+            v-if="isExpanded(order.id)"
+            class="mt-4 space-y-2 border-t border-slate-100 pt-4 dark:border-slate-800"
+          >
+            <div
+              v-for="item in order.items"
+              :key="item.id"
+              class="flex items-center justify-between gap-3"
+            >
+              <div class="flex min-w-0 items-center gap-3">
+                <img
+                  :src="`${config.public.apiBaseUrl}${item.menu.image}`"
+                  :alt="item.menu.title"
+                  class="h-11 w-11 rounded-lg object-cover"
+                />
+                <p class="truncate text-sm">
+                  {{ item.quantity }}x {{ item.menu.title }}
+                  <span v-if="item.temperature" class="text-slate-400"
+                    >({{ item.temperature }})</span
+                  >
+                </p>
               </div>
+              <p class="text-sm font-semibold">
+                {{ formatPrice(item.lineTotal) }}
+              </p>
+            </div>
+            <div
+              v-if="order.note"
+              class="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+            >
+              Catatan: {{ order.note }}
             </div>
           </div>
-        </section>
-
-        <section>
-          <div class="mb-3 flex items-center justify-between">
-            <h3 class="text-lg font-black">
-              Selesai ({{ doneOrders.length }})
-            </h3>
-          </div>
-          <div class="space-y-3">
-            <div
-              v-for="order in doneOrders"
-              :key="order.id"
-              class="rounded-xl border border-emerald-200/50 bg-white p-4 shadow-sm dark:border-emerald-900/40 dark:bg-slate-900/60"
-            >
-              <button
-                class="flex w-full items-start justify-between gap-4 text-left"
-                @click="toggleOrder(order.id)"
-              >
-                <div>
-                  <p
-                    class="text-xs font-bold uppercase tracking-wide text-emerald-500"
-                  >
-                    Selesai
-                  </p>
-                  <p class="text-base font-black">{{ order.code }}</p>
-                  <p class="text-xs text-slate-500">
-                    {{ formatDate(order.createdAt) }}
-                  </p>
-                </div>
-                <div class="text-right">
-                  <p class="text-sm font-semibold">
-                    {{ formatPrice(order.totalAmount) }}
-                  </p>
-                  <p class="text-xs text-slate-500">
-                    {{ order.items.length }} item
-                  </p>
-                </div>
-              </button>
-
-              <div
-                class="mt-4 flex justify-end border-t border-slate-100 pt-3 dark:border-slate-800"
-              >
-                <button
-                  class="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-60 dark:border-red-900/40 dark:hover:bg-red-900/20"
-                  :disabled="deletingOrderId === order.id"
-                  @click="onHideCompletedOrder(order.id)"
-                >
-                  <Trash2 :size="14" />
-                  {{
-                    deletingOrderId === order.id
-                      ? "Menghapus..."
-                      : "Hapus Riwayat"
-                  }}
-                </button>
-              </div>
-
-              <div
-                v-if="isExpanded(order.id)"
-                class="mt-4 space-y-2 border-t border-slate-100 pt-4 dark:border-slate-800"
-              >
-                <div
-                  v-for="item in order.items"
-                  :key="item.id"
-                  class="flex items-center justify-between gap-3"
-                >
-                  <div class="flex min-w-0 items-center gap-3">
-                    <img
-                      :src="`${config.public.apiBaseUrl}${item.menu.image}`"
-                      :alt="item.menu.title"
-                      class="h-11 w-11 rounded-lg object-cover"
-                    />
-                    <p class="truncate text-sm">
-                      {{ item.quantity }}x {{ item.menu.title }}
-                      <span v-if="item.temperature" class="text-slate-400"
-                        >({{ item.temperature }})</span
-                      >
-                    </p>
-                  </div>
-                  <p class="text-sm font-semibold">
-                    {{ formatPrice(item.lineTotal) }}
-                  </p>
-                </div>
-                <div
-                  v-if="order.note"
-                  class="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-                >
-                  Catatan: {{ order.note }}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        </div>
       </div>
     </div>
   </div>

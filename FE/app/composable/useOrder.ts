@@ -5,6 +5,7 @@ import type {
   CheckoutResponse,
   OrderResponse,
   OrdersResponse,
+  UserOrderStatus,
 } from '../types/api';
 
 export function useOrder() {
@@ -14,8 +15,12 @@ export function useOrder() {
     return api.create<CheckoutResponse, CheckoutPayload>('/orders/checkout', payload);
   };
 
-  const listMyOrders = async () => {
-    return api.get<OrdersResponse>('/orders/my');
+  const listMyOrders = async (status?: UserOrderStatus) => {
+    if (!status) {
+      return api.get<OrdersResponse>('/orders/my');
+    }
+
+    return api.list<OrdersResponse>('/orders/my', { status });
   };
 
   const listAdminOrders = async (status?: AdminOrderStatus) => {
@@ -42,6 +47,13 @@ export function useOrder() {
     return api.remove<{ message: string }>(`/orders/${orderId}`);
   };
 
+  const confirmDirectPayment = async (orderId: string) => {
+    return api.patch<OrderResponse, Record<string, never>>(
+      `/orders/${orderId}/confirm-direct-payment`,
+      {},
+    );
+  };
+
   return {
     checkout,
     listMyOrders,
@@ -50,5 +62,6 @@ export function useOrder() {
     completeOrder,
     hideMyCompletedOrder,
     deleteCompletedOrderByAdmin,
+    confirmDirectPayment,
   };
 }

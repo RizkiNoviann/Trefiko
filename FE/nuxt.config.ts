@@ -13,7 +13,10 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBaseUrl: import.meta.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'
+      apiBaseUrl: import.meta.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:3001',
+      midtransClientKey: import.meta.env.NUXT_PUBLIC_MIDTRANS_CLIENT_KEY || '',
+      midtransSnapScriptUrl:
+        import.meta.env.NUXT_PUBLIC_MIDTRANS_SNAP_SCRIPT_URL || 'https://app.sandbox.midtrans.com/snap/snap.js'
     }
   },
 

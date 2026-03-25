@@ -75,7 +75,7 @@ export interface MenuImageUploadResponse extends ApiMessageResponse {
 
 export type PaymentMethod = 'COD' | 'DIRECT';
 export type AdminOrderStatus = 'PENDING' | 'PROCESS' | 'COMPLETED';
-export type UserOrderStatus = 'PROCESS' | 'COMPLETED';
+export type UserOrderStatus = 'PENDING' | 'PROCESS' | 'COMPLETED';
 
 export interface OrderItem {
   id: string;
@@ -97,6 +97,8 @@ export interface Order {
     email: string;
   };
   payment: PaymentMethod;
+  paymentType?: string | null;
+  paymentChannel?: string | null;
   status: AdminOrderStatus;
   note?: string | null;
   totalAmount: number;
@@ -118,6 +120,8 @@ export interface CheckoutPayload {
 
 export interface CheckoutResponse extends ApiMessageResponse {
   order: Order;
+  snapToken?: string;
+  snapRedirectUrl?: string;
 }
 
 export interface OrdersResponse extends ApiMessageResponse {

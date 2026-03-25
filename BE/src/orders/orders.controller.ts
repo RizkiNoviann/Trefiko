@@ -33,8 +33,11 @@ export class OrdersController {
 
   @Get('my')
   @UseGuards(JwtAuthGuard)
-  getMyOrders(@Req() req: AuthenticatedRequest) {
-    return this.ordersService.getMyOrders(req.user!.sub);
+  getMyOrders(
+    @Req() req: AuthenticatedRequest,
+    @Query('status') status?: 'PENDING' | 'PROCESS' | 'COMPLETED',
+  ) {
+    return this.ordersService.getMyOrders(req.user!.sub, status);
   }
 
   @Get('admin')
@@ -59,6 +62,12 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard)
   hideMyCompletedOrder(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.ordersService.hideMyCompletedOrder(req.user!.sub, id);
+  }
+
+  @Patch(':id/confirm-direct-payment')
+  @UseGuards(JwtAuthGuard)
+  confirmDirectPayment(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.ordersService.confirmDirectPayment(req.user!.sub, id);
   }
 
   @Delete(':id')

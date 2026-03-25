@@ -1,16 +1,5 @@
 <script setup lang="ts">
-import {
-  Menu,
-  X,
-  User,
-  ShoppingCart,
-  Home,
-  UtensilsCrossed,
-  LogOut,
-  Moon,
-  Sun,
-  LogIn,
-} from "lucide-vue-next";
+import { ShoppingCart, LogOut, Moon, Sun, LogIn } from "lucide-vue-next";
 import { useAuth } from "../composable/useAuth";
 
 const mobileMenuOpen = ref(false);
@@ -170,7 +159,7 @@ onBeforeUnmount(() => {
             >
               <span class="inline-flex items-center gap-3">
                 <component :is="isDarkMode ? Sun : Moon" :size="18" />
-                {{ isDarkMode ? "Light Mode" : "Dark Mode" }}
+                {{ isDarkMode ? "Mode Terang" : "Mode Gelap" }}
               </span>
             </button>
             <button
@@ -178,26 +167,20 @@ onBeforeUnmount(() => {
               class="w-full px-4 py-3 flex items-center gap-3 text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all"
             >
               <LogOut :size="18" />
-              Logout
+              Keluar
             </button>
           </div>
         </div>
 
-        <!-- Login Button & Theme Toggle (when not authenticated) -->
+        <!-- Login Button (when not authenticated) -->
         <template v-if="!isAuthenticated">
           <NuxtLink
             :to="accountPath"
             class="flex h-10 px-4 items-center gap-2 rounded-xl bg-primary text-background-dark hover:shadow-lg hover:shadow-primary/20 transition-all font-semibold text-sm"
           >
             <LogIn :size="18" />
-            Login
+            Masuk
           </NuxtLink>
-          <button
-            @click="toggleTheme"
-            class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 hover:bg-primary/20 transition-all text-slate-900 dark:text-slate-100"
-          >
-            <component :is="isDarkMode ? Sun : Moon" :size="18" />
-          </button>
         </template>
 
         <NuxtLink
@@ -210,19 +193,12 @@ onBeforeUnmount(() => {
 
         <!-- Mobile Hamburger -->
         <button
-          @click="toggleTheme"
-          class="md:hidden flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-primary/10 hover:bg-primary/20 transition-all"
-        >
-          <component :is="isDarkMode ? Sun : Moon" :size="15" />
-          {{ isDarkMode ? "LIGHT" : "DARK" }}
-        </button>
-
-        <button
-          class="md:hidden flex items-center justify-center h-10 w-10 rounded-xl hover:bg-primary/10 transition-all"
+          class="md:hidden flex items-center justify-center h-10 rounded-xl px-3 hover:bg-primary/10 transition-all"
           @click="mobileMenuOpen = !mobileMenuOpen"
         >
-          <X v-if="mobileMenuOpen" :size="20" />
-          <Menu v-else :size="20" />
+          <span class="text-xs font-bold">{{
+            mobileMenuOpen ? "Tutup" : "Menu"
+          }}</span>
         </button>
       </div>
     </div>
@@ -235,122 +211,57 @@ onBeforeUnmount(() => {
       <nav class="flex flex-col px-6 py-4 gap-1">
         <NuxtLink
           to="/"
-          class="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-semibold hover:bg-primary/10 hover:text-primary transition-all"
+          class="px-3 py-3 rounded-lg text-sm font-semibold hover:bg-primary/10 hover:text-primary transition-all"
           :class="route.path === '/' ? 'text-primary bg-primary/5' : ''"
           @click="closeMobileMenu"
         >
-          <Home :size="18" />
           Beranda
         </NuxtLink>
         <NuxtLink
           to="/menu"
-          class="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-semibold hover:bg-primary/10 hover:text-primary transition-all"
+          class="px-3 py-3 rounded-lg text-sm font-semibold hover:bg-primary/10 hover:text-primary transition-all"
           :class="
             route.path.startsWith('/menu') ? 'text-primary bg-primary/5' : ''
           "
           @click="closeMobileMenu"
         >
-          <UtensilsCrossed :size="18" />
           Menu
         </NuxtLink>
         <button
-          class="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-semibold hover:bg-primary/10 hover:text-primary transition-all w-full text-left"
+          class="w-full px-3 py-3 rounded-lg text-sm font-semibold hover:bg-primary/10 hover:text-primary transition-all text-left"
           @click="scrollToSection('tentang-kami')"
         >
-          <Home :size="18" />
           Tentang
         </button>
         <button
-          class="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-semibold hover:bg-primary/10 hover:text-primary transition-all w-full text-left"
+          class="w-full px-3 py-3 rounded-lg text-sm font-semibold hover:bg-primary/10 hover:text-primary transition-all text-left"
           @click="scrollToSection('lokasi')"
         >
-          <Home :size="18" />
           Kontak
         </button>
         <button
-          class="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-semibold hover:bg-primary/10 hover:text-primary transition-all w-full text-left"
+          class="w-full px-3 py-3 rounded-lg text-sm font-semibold hover:bg-primary/10 hover:text-primary transition-all text-left"
           @click="scrollToSection('ulasan')"
         >
-          <Home :size="18" />
           Ulasan
         </button>
         <NuxtLink
           v-if="isAuthenticated"
           to="/chart"
-          class="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-semibold hover:bg-primary/10 hover:text-primary transition-all"
+          class="px-3 py-3 rounded-lg text-sm font-semibold hover:bg-primary/10 hover:text-primary transition-all"
           :class="route.path === '/chart' ? 'text-primary bg-primary/5' : ''"
           @click="closeMobileMenu"
         >
-          <ShoppingCart :size="18" />
           Keranjang
         </NuxtLink>
         <button
           v-if="isAuthenticated"
           @click="handleLogout"
-          class="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all w-full"
+          class="w-full px-3 py-3 rounded-lg text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all text-left"
         >
-          <LogOut :size="18" />
-          Logout
+          Keluar
         </button>
       </nav>
     </div>
   </header>
-
-  <!-- Mobile Bottom Tab Bar -->
-  <nav
-    class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 dark:bg-background-dark/90 backdrop-blur-md border-t border-primary/10 flex justify-around py-3 px-2"
-  >
-    <NuxtLink
-      to="/"
-      class="flex flex-col items-center gap-1 transition-colors"
-      :class="
-        route.path === '/'
-          ? 'text-primary'
-          : 'text-slate-500 hover:text-primary'
-      "
-    >
-      <Home :size="22" />
-      <span class="text-[10px] font-bold">HOME</span>
-    </NuxtLink>
-    <NuxtLink
-      to="/menu"
-      class="flex flex-col items-center gap-1 transition-colors"
-      :class="
-        route.path.startsWith('/menu')
-          ? 'text-primary'
-          : 'text-slate-500 hover:text-primary'
-      "
-    >
-      <UtensilsCrossed :size="22" />
-      <span class="text-[10px] font-bold">MENU</span>
-    </NuxtLink>
-    <NuxtLink
-      v-if="isAuthenticated"
-      to="/chart"
-      class="flex flex-col items-center gap-1 transition-colors"
-      :class="
-        route.path === '/chart'
-          ? 'text-primary'
-          : 'text-slate-500 hover:text-primary'
-      "
-    >
-      <ShoppingCart :size="22" />
-      <span class="text-[10px] font-bold">CART</span>
-    </NuxtLink>
-    <NuxtLink
-      :to="accountPath"
-      class="flex flex-col items-center gap-1 transition-colors"
-      :class="
-        route.path.startsWith('/auth') || route.path.startsWith('/dashboard')
-          ? 'text-primary'
-          : 'text-slate-500 hover:text-primary'
-      "
-    >
-      <span v-if="isAuthenticated" class="text-xs font-black tracking-wide">
-        {{ userInitials }}
-      </span>
-      <User v-else :size="22" />
-      <span class="text-[10px] font-bold">AKUN</span>
-    </NuxtLink>
-  </nav>
 </template>

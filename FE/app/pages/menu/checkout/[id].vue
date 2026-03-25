@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import {
   ArrowLeft,
   ArrowRight,
@@ -12,19 +12,37 @@ import { useOrder } from "~/composable/useOrder";
 import { useReview } from "~/composable/useReview";
 import { useAuth } from "~/composable/useAuth";
 import type { PaymentMethod } from "~/types/api";
+import PaymentMethodInfoModal from "~/components/PaymentMethodInfoModal.vue";
+
+declare global {
+  interface Window {
+    snap?: {
+      pay: (
+        token: string,
+        options?: {
+          onSuccess?: (result: unknown) => void;
+          onPending?: (result: unknown) => void;
+          onError?: (result: unknown) => void;
+          onClose?: () => void;
+        },
+      ) => void;
+    };
+  }
+}
 
 useSeoMeta({
-  title: "Checkout | Cafe Trefiko",
+  title: "Pembayaran | Cafe Trefiko",
 });
 
 const config = useRuntimeConfig();
 const router = useRouter();
 const { isAuthenticated } = useAuth();
 const { cartItems, totalPrice, clearCart } = useCart();
-const { checkout } = useOrder();
+const { checkout, confirmDirectPayment } = useOrder();
 const { createReview } = useReview();
+let snapScriptPromise: Promise<void> | null = null;
 
-const selectedPayment = ref<PaymentMethod>("COD");
+const selectedPayment = ref<PaymentMethod>("DIRECT");
 const orderNote = ref("");
 const isSubmitting = ref(false);
 const errorMessage = ref("");
@@ -34,6 +52,9 @@ const reviewRating = ref(5);
 const reviewComment = ref("");
 const isSubmittingReview = ref(false);
 const reviewErrorMessage = ref("");
+const showPaymentMethodInfoModal = ref(false);
+const paymentMethodInfoTitle = ref("");
+const paymentMethodInfoDescription = ref("");
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("id-ID", {
@@ -46,15 +67,115 @@ const canCheckout = computed(
   () => cartItems.value.length > 0 && !isSubmitting.value,
 );
 
-const chooseDirectComingSoon = () => {
-  if (import.meta.client) {
-    window.alert("Coming soon: Bayar Langsung akan memakai payment gateway.");
-  }
-  selectedPayment.value = "COD";
+const showDirectInfoModal = () => {
+  paymentMethodInfoTitle.value = "Bayar Langsung Dipilih";
+  paymentMethodInfoDescription.value =
+    "Setelah pembayaran berhasil, status pesanan akan langsung diproses dan Anda tinggal menunggu pesanan disiapkan.";
+  showPaymentMethodInfoModal.value = true;
+};
+
+const showCodInfoModal = () => {
+  paymentMethodInfoTitle.value = "COD Dipilih";
+  paymentMethodInfoDescription.value =
+    "Pesanan akan berstatus pending terlebih dahulu. Admin akan mengonfirmasi pesanan sebelum diproses.";
+  showPaymentMethodInfoModal.value = true;
+};
+
+const closePaymentMethodInfoModal = () => {
+  showPaymentMethodInfoModal.value = false;
+};
+
+const chooseDirect = () => {
+  selectedPayment.value = "DIRECT";
+  showDirectInfoModal();
 };
 
 const chooseCod = () => {
   selectedPayment.value = "COD";
+  showCodInfoModal();
+};
+
+const loadSnapScript = async () => {
+  if (!import.meta.client) {
+    throw new Error("Snap popup hanya tersedia di browser");
+  }
+
+  if (window.snap) {
+    return;
+  }
+
+  if (snapScriptPromise) {
+    return snapScriptPromise;
+  }
+
+  snapScriptPromise = new Promise<void>((resolve, reject) => {
+    const snapScriptUrl = config.public.midtransSnapScriptUrl;
+
+    if (!config.public.midtransClientKey) {
+      reject(new Error("Midtrans client key belum dikonfigurasi"));
+      return;
+    }
+
+    const existingScript = document.querySelector<HTMLScriptElement>(
+      `script[src="${snapScriptUrl}"]`,
+    );
+
+    if (existingScript) {
+      existingScript.addEventListener("load", () => resolve(), { once: true });
+      existingScript.addEventListener(
+        "error",
+        () => reject(new Error("Gagal memuat Midtrans Snap")),
+        { once: true },
+      );
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = snapScriptUrl;
+    script.setAttribute("data-client-key", config.public.midtransClientKey);
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Gagal memuat Midtrans Snap"));
+    document.body.appendChild(script);
+  });
+
+  return snapScriptPromise;
+};
+
+const openSnapPopup = async (snapToken: string, orderId: string) => {
+  await loadSnapScript();
+
+  if (!window.snap) {
+    throw new Error("Midtrans Snap tidak tersedia");
+  }
+
+  return new Promise<void>((resolve, reject) => {
+    window.snap?.pay(snapToken, {
+      onSuccess: async () => {
+        try {
+          await confirmDirectPayment(orderId);
+          resolve();
+        } catch (error: any) {
+          reject(
+            new Error(
+              error?.message ||
+                "Pembayaran berhasil tetapi verifikasi order gagal",
+            ),
+          );
+        }
+      },
+      onPending: () => {
+        reject(
+          new Error("Pembayaran masih pending. Selesaikan pembayaran dulu."),
+        );
+      },
+      onError: () => {
+        reject(new Error("Pembayaran gagal. Silakan coba lagi."));
+      },
+      onClose: () => {
+        reject(new Error("Popup pembayaran ditutup sebelum selesai."));
+      },
+    });
+  });
 };
 
 const submitCheckout = async () => {
@@ -84,6 +205,15 @@ const submitCheckout = async () => {
     });
 
     checkoutOrderId.value = response.order.id;
+
+    if (selectedPayment.value === "DIRECT") {
+      if (!response.snapToken) {
+        throw new Error("Snap token tidak ditemukan");
+      }
+
+      await openSnapPopup(response.snapToken, response.order.id);
+    }
+
     clearCart();
     showReviewModal.value = true;
   } catch (error: any) {
@@ -93,9 +223,16 @@ const submitCheckout = async () => {
   }
 };
 
+const getTargetChartStatus = () => {
+  return selectedPayment.value === "COD" ? "PENDING" : "PROCESS";
+};
+
 const closeReviewModal = async () => {
   showReviewModal.value = false;
-  await router.push("/chart");
+  await router.push({
+    path: "/chart",
+    query: { status: getTargetChartStatus() },
+  });
 };
 
 const submitReview = async () => {
@@ -122,6 +259,10 @@ const submitReview = async () => {
     isSubmittingReview.value = false;
   }
 };
+
+onMounted(() => {
+  showDirectInfoModal();
+});
 </script>
 
 <template>
@@ -133,7 +274,7 @@ const submitReview = async () => {
       >
         <ArrowLeft :size="20" />
       </NuxtLink>
-      <h1 class="text-3xl font-bold tracking-tight">Checkout</h1>
+      <h1 class="text-3xl font-bold tracking-tight">Pembayaran</h1>
     </div>
 
     <div
@@ -162,13 +303,10 @@ const submitReview = async () => {
                   ? 'border-primary bg-primary/5'
                   : 'border-slate-200 hover:border-primary/40 dark:border-slate-700'
               "
-              @click="chooseDirectComingSoon"
+              @click="chooseDirect"
             >
               <div class="flex flex-1 flex-col">
                 <span class="text-sm font-bold">Bayar Langsung</span>
-                <span class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Coming soon (payment gateway)
-                </span>
               </div>
               <CheckCircle2
                 :size="20"
@@ -192,9 +330,6 @@ const submitReview = async () => {
             >
               <div class="flex flex-1 flex-col">
                 <span class="text-sm font-bold">Bayar di Tempat (COD)</span>
-                <span class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Metode aktif saat ini
-                </span>
               </div>
               <CheckCircle2
                 :size="20"
@@ -291,6 +426,13 @@ const submitReview = async () => {
       </div>
     </div>
   </div>
+
+  <PaymentMethodInfoModal
+    :open="showPaymentMethodInfoModal"
+    :title="paymentMethodInfoTitle"
+    :description="paymentMethodInfoDescription"
+    @close="closePaymentMethodInfoModal"
+  />
 
   <div
     v-if="showReviewModal"

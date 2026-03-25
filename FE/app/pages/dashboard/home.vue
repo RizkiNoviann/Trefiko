@@ -1,261 +1,250 @@
-<script setup>
-definePageMeta({ layout: "dashboard" });
-
+<script setup lang="ts">
+import { computed, onMounted, ref } from "vue";
 import {
-  Search,
-  Bell,
-  Settings,
+  Clock3,
+  CupSoda,
+  MessageSquareText,
+  RefreshCcw,
   ShoppingBag,
-  Star,
-  Package,
-  UserPlus,
-  TrendingUp,
-  CreditCard,
-  ShoppingCart,
+  Timer,
 } from "lucide-vue-next";
 import Sidebar from "~/components/sidebar.vue";
 import NavAdmin from "~/components/navadmin.vue";
+import { useMenu } from "~/composable/useMenu";
+import { useOrder } from "~/composable/useOrder";
+import { useReview } from "~/composable/useReview";
+import type { Order, Review } from "~/types/api";
+
+definePageMeta({ layout: "dashboard" });
 
 const activeMenu = "dashboard";
+const isLoading = ref(false);
+const errorMessage = ref("");
 
-const activityItems = [
-  {
-    icon: ShoppingBag,
-    iconColor: "text-primary",
-    title: "Order #8492",
-    description: "completed for 2 Caramel Macchiatos",
-    time: "2 minutes ago",
-  },
-  {
-    icon: Star,
-    iconColor: "text-yellow-500",
-    title: "New Review",
-    description: 'received: "Best coffee in town!" (5 stars)',
-    time: "14 minutes ago",
-  },
-  {
-    icon: Package,
-    iconColor: "text-blue-500",
-    title: "Inventory Alert:",
-    description: "Arabica beans running low.",
-    time: "1 hour ago",
-  },
-  {
-    icon: UserPlus,
-    iconColor: "text-purple-500",
-    title: "New Staff",
-    description: "registered: Sarah Connor (Barista)",
-    time: "3 hours ago",
-  },
-  {
-    icon: ShoppingBag,
-    iconColor: "text-primary",
-    title: "Order #8491",
-    description: "processed: 1 Avocado Toast",
-    time: "4 hours ago",
-  },
-];
+const orders = ref<Order[]>([]);
+const reviews = ref<Review[]>([]);
+const totalMenus = ref(0);
 
-const metrics = [
-  {
-    label: "Total Sales",
-    value: "$12,840",
-    change: "+12.5%",
-    icon: CreditCard,
-    iconBg: "bg-primary/10",
-    iconColor: "text-primary",
-  },
-  {
-    label: "Total Orders",
-    value: "450",
-    change: "+8.2%",
-    icon: ShoppingCart,
-    iconBg: "bg-blue-500/10",
-    iconColor: "text-blue-500",
-  },
-  {
-    label: "Average Rating",
-    value: "4.8",
-    change: "+0.1",
-    icon: Star,
-    iconBg: "bg-orange-500/10",
-    iconColor: "text-orange-500",
-  },
-];
+const { listAdminOrders } = useOrder();
+const { listAdminReviews } = useReview();
+const { listMenus } = useMenu();
+
+const pendingCount = computed(
+  () => orders.value.filter((order) => order.status === "PENDING").length,
+);
+const processCount = computed(
+  () => orders.value.filter((order) => order.status === "PROCESS").length,
+);
+const completedCount = computed(
+  () => orders.value.filter((order) => order.status === "COMPLETED").length,
+);
+
+const averageRating = computed(() => {
+  if (!reviews.value.length) {
+    return 0;
+  }
+
+  const total = reviews.value.reduce((sum, review) => sum + review.rating, 0);
+  return total / reviews.value.length;
+});
+
+const latestOrders = computed(() => orders.value.slice(0, 5));
+
+const mapOrderStatusLabel = (status: string) => {
+  if (status === "PENDING") {
+    return "Pending";
+  }
+
+  if (status === "PROCESS") {
+    return "Diproses";
+  }
+
+  return "Selesai";
+};
+
+const formatDate = (value: string) => {
+  return new Date(value).toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const fetchDashboardData = async () => {
+  isLoading.value = true;
+  errorMessage.value = "";
+
+  try {
+    const [ordersResponse, reviewsResponse, menusResponse] = await Promise.all([
+      listAdminOrders(),
+      listAdminReviews(),
+      listMenus(),
+    ]);
+
+    orders.value = ordersResponse.orders;
+    reviews.value = reviewsResponse.reviews;
+    totalMenus.value = menusResponse.menus.length;
+  } catch (error: any) {
+    errorMessage.value = error?.message || "Gagal memuat data dashboard";
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+onMounted(fetchDashboardData);
 </script>
 
 <template>
   <div class="flex h-screen overflow-hidden">
     <Sidebar :activeMenu="activeMenu" />
 
-    <main class="flex-1 flex flex-col overflow-y-auto">
-      <!-- Header -->
-      <NavAdmin
-        searchPlaceholder="Search analytics..."
-        userName="Alex Rivera"
-        userRole="Store Manager"
-      />
+    <main class="flex min-w-0 flex-1 flex-col overflow-hidden">
+      <NavAdmin />
 
-      <!-- Content -->
-      <div class="p-8 space-y-8">
-        <!-- Summary Metrics -->
-        <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div
-            v-for="(metric, index) in metrics"
-            :key="index"
-            class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow"
-          >
-            <div class="flex justify-between items-start mb-4">
-              <div
-                class="p-3 rounded-xl"
-                :class="[metric.iconBg, metric.iconColor]"
-              >
-                <component :is="metric.icon" class="w-5 h-5" />
-              </div>
-              <span
-                class="text-emerald-500 text-sm font-bold bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-lg"
-              >
-                {{ metric.change }}
-              </span>
-            </div>
-            <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">
-              {{ metric.label }}
+      <div class="flex-1 overflow-y-auto p-8">
+        <div class="mb-6 flex items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-black tracking-tight">Dasbor Admin</h2>
+            <p class="text-sm text-slate-500">
+              Ringkasan data sesuai fitur yang aktif
             </p>
-            <h3
-              class="text-slate-900 dark:text-slate-100 text-3xl font-bold mt-1"
-            >
-              {{ metric.value }}
-            </h3>
           </div>
-        </section>
-
-        <!-- Analytics Row -->
-        <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <!-- Sales Chart -->
-          <div
-            class="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm"
+          <button
+            class="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold transition hover:border-primary hover:text-primary dark:border-slate-700"
+            @click="fetchDashboardData"
           >
-            <div class="flex justify-between items-center mb-8">
-              <div>
-                <h4
-                  class="text-slate-900 dark:text-slate-100 text-lg font-bold"
-                >
-                  Sales Overview
-                </h4>
-                <p class="text-slate-500 dark:text-slate-400 text-sm">
-                  Revenue performance for last 7 days
-                </p>
-              </div>
-              <div class="flex gap-2">
-                <button
-                  class="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-slate-900"
-                >
-                  7 Days
-                </button>
-                <button
-                  class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-500"
-                >
-                  30 Days
-                </button>
-              </div>
-            </div>
-            <div class="flex items-end gap-2 mb-4">
-              <h2
-                class="text-slate-900 dark:text-slate-100 text-4xl font-black"
-              >
-                $45,200
-              </h2>
-              <span
-                class="text-emerald-500 text-base font-bold pb-1 flex items-center gap-1"
-              >
-                <TrendingUp class="w-4 h-4" /> +15.4%
-              </span>
-            </div>
-            <div class="relative w-full h-[240px] mt-8">
-              <svg
-                fill="none"
-                height="100%"
-                preserveAspectRatio="none"
-                viewBox="0 0 478 150"
-                width="100%"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M0 109C18.1538 109 18.1538 21 36.3077 21C54.4615 21 54.4615 41 72.6154 41C90.7692 41 90.7692 93 108.923 93C127.077 93 127.077 33 145.231 33C163.385 33 163.385 101 181.538 101C199.692 101 199.692 61 217.846 61C236 61 236 45 254.154 45C272.308 45 272.308 121 290.462 121C308.615 121 308.615 149 326.769 149C344.923 149 344.923 1 363.077 1C381.231 1 381.231 81 399.385 81C417.538 81 417.538 129 435.692 129C453.846 129 453.846 25 472 25V149H0V109Z"
-                  fill="url(#sales_gradient)"
-                />
-                <path
-                  d="M0 109C18.1538 109 18.1538 21 36.3077 21C54.4615 21 54.4615 41 72.6154 41C90.7692 41 90.7692 93 108.923 93C127.077 93 127.077 33 145.231 33C163.385 33 163.385 101 181.538 101C199.692 101 199.692 61 217.846 61C236 61 236 45 254.154 45C272.308 45 272.308 121 290.462 121C308.615 121 308.615 149 326.769 149C344.923 149 344.923 1 363.077 1C381.231 1 381.231 81 399.385 81C417.538 81 417.538 129 435.692 129C453.846 129 453.846 25 472 25"
-                  stroke="#4ade80"
-                  stroke-linecap="round"
-                  stroke-width="4"
-                />
-                <defs>
-                  <linearGradient
-                    gradientUnits="userSpaceOnUse"
-                    id="sales_gradient"
-                    x1="236"
-                    x2="236"
-                    y1="1"
-                    y2="149"
-                  >
-                    <stop stop-color="#4ade80" stop-opacity="0.3" />
-                    <stop offset="1" stop-color="#4ade80" stop-opacity="0" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-            <div
-              class="flex justify-between px-2 mt-4 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider"
+            <RefreshCcw :size="16" />
+            Muat Ulang
+          </button>
+        </div>
+
+        <div
+          v-if="errorMessage"
+          class="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300"
+        >
+          {{ errorMessage }}
+        </div>
+
+        <div v-if="isLoading" class="py-14 text-center text-slate-500">
+          Memuat dashboard...
+        </div>
+
+        <template v-else>
+          <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <article
+              class="rounded-xl border border-amber-200/50 bg-white p-5 shadow-sm dark:border-amber-900/40 dark:bg-slate-900"
             >
-              <span>Mon</span>
-              <span>Tue</span>
-              <span>Wed</span>
-              <span>Thu</span>
-              <span>Fri</span>
-              <span>Sat</span>
-              <span>Sun</span>
-            </div>
-          </div>
-
-          <!-- Recent Activity -->
-          <div
-            class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm flex flex-col"
-          >
-            <div class="flex justify-between items-center mb-6">
-              <h4 class="text-slate-900 dark:text-slate-100 text-lg font-bold">
-                Recent Activity
-              </h4>
-              <button class="text-primary text-sm font-bold hover:underline">
-                View All
-              </button>
-            </div>
-            <div class="flex flex-col gap-6 overflow-y-auto max-h-[400px]">
               <div
-                v-for="(item, index) in activityItems"
-                :key="index"
-                class="flex gap-4"
+                class="mb-2 inline-flex rounded-lg bg-amber-100 p-2 text-amber-600 dark:bg-amber-900/30 dark:text-amber-300"
               >
-                <div
-                  class="size-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0"
-                >
-                  <component
-                    :is="item.icon"
-                    class="w-5 h-5"
-                    :class="item.iconColor"
-                  />
-                </div>
-                <div class="flex flex-col">
-                  <p class="text-sm text-slate-900 dark:text-slate-100">
-                    <span class="font-bold">{{ item.title }}</span>
-                    {{ item.description }}
+                <Clock3 :size="18" />
+              </div>
+              <p class="text-sm text-slate-500">Pesanan Pending</p>
+              <p class="text-3xl font-black">{{ pendingCount }}</p>
+            </article>
+
+            <article
+              class="rounded-xl border border-blue-200/50 bg-white p-5 shadow-sm dark:border-blue-900/40 dark:bg-slate-900"
+            >
+              <div
+                class="mb-2 inline-flex rounded-lg bg-blue-100 p-2 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300"
+              >
+                <Timer :size="18" />
+              </div>
+              <p class="text-sm text-slate-500">Pesanan Diproses</p>
+              <p class="text-3xl font-black">{{ processCount }}</p>
+            </article>
+
+            <article
+              class="rounded-xl border border-emerald-200/50 bg-white p-5 shadow-sm dark:border-emerald-900/40 dark:bg-slate-900"
+            >
+              <div
+                class="mb-2 inline-flex rounded-lg bg-emerald-100 p-2 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300"
+              >
+                <ShoppingBag :size="18" />
+              </div>
+              <p class="text-sm text-slate-500">Pesanan Selesai</p>
+              <p class="text-3xl font-black">{{ completedCount }}</p>
+            </article>
+
+            <article
+              class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+            >
+              <div
+                class="mb-2 inline-flex rounded-lg bg-primary/20 p-2 text-primary"
+              >
+                <CupSoda :size="18" />
+              </div>
+              <p class="text-sm text-slate-500">Total Menu</p>
+              <p class="text-3xl font-black">{{ totalMenus }}</p>
+            </article>
+
+            <article
+              class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+            >
+              <div
+                class="mb-2 inline-flex rounded-lg bg-primary/20 p-2 text-primary"
+              >
+                <MessageSquareText :size="18" />
+              </div>
+              <p class="text-sm text-slate-500">Total Ulasan</p>
+              <p class="text-3xl font-black">{{ reviews.length }}</p>
+            </article>
+
+            <article
+              class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+            >
+              <div
+                class="mb-2 inline-flex rounded-lg bg-primary/20 p-2 text-primary"
+              >
+                <MessageSquareText :size="18" />
+              </div>
+              <p class="text-sm text-slate-500">Rata-Rata Rating</p>
+              <p class="text-3xl font-black">{{ averageRating.toFixed(1) }}</p>
+            </article>
+          </section>
+
+          <section
+            class="mt-8 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+          >
+            <h3 class="mb-4 text-lg font-black">Pesanan Terbaru</h3>
+
+            <div
+              v-if="latestOrders.length === 0"
+              class="text-sm text-slate-500"
+            >
+              Belum ada order.
+            </div>
+
+            <div v-else class="space-y-3">
+              <div
+                v-for="order in latestOrders"
+                :key="order.id"
+                class="flex items-center justify-between rounded-lg border border-slate-100 px-4 py-3 dark:border-slate-800"
+              >
+                <div>
+                  <p class="text-sm font-bold">{{ order.code }}</p>
+                  <p class="text-xs text-slate-500">
+                    {{ order.user.name }} • {{ formatDate(order.createdAt) }}
                   </p>
-                  <span class="text-xs text-slate-500">{{ item.time }}</span>
                 </div>
+                <span
+                  class="rounded-full px-2.5 py-1 text-xs font-bold"
+                  :class="
+                    order.status === 'PENDING'
+                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                      : order.status === 'PROCESS'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                        : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                  "
+                >
+                  {{ mapOrderStatusLabel(order.status) }}
+                </span>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </template>
       </div>
     </main>
   </div>

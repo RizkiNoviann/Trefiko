@@ -16,6 +16,7 @@ import {
 } from "lucide-vue-next";
 import { useReview } from "~/composable/useReview";
 import type { Review } from "~/types/api";
+import heroImage from "~/assets/img/hero.jpg";
 
 useSeoMeta({
   title: "Cafe Trefiko - Kesegaran Kopi Pilihan",
@@ -155,9 +156,7 @@ onMounted(async () => {
     >
       <div
         class="w-full md:w-1/2 aspect-square md:aspect-[4/3] bg-center bg-no-repeat bg-cover rounded-3xl shadow-2xl relative overflow-hidden"
-        style="
-          background-image: url(&quot;https://lh3.googleusercontent.com/aida-public/AB6AXuAg4VdD8z4DUQeOxb5I0wPvsO-CK7J3iaJgpLtTk5cY2WWboVrzoFtV0_ciuACoR7jUfPCN7qHFSQE9TSinT9SUkuZrNofAyIht2-lf9KoDi82700Nro63yDFouekRM01by4Mveqe9NWN9rRAlIiXI30xBP13cJCtyl-IGPLcYL0GrT_vX_XQwwh0LQ6pA7KFDArgBETcE6GJpmyc0BSwTtxi90jXhR09hBH6d6vMzuGWr0ugi3ww-WpMvzFcf6Gw85QT5SDnQQYxI&quot;);
-        "
+        :style="{ backgroundImage: `url(${heroImage})` }"
       >
         <div
           class="absolute inset-0 bg-gradient-to-t from-background-dark/40 to-transparent"
@@ -340,7 +339,7 @@ onMounted(async () => {
                 Sosial Media
               </div>
               <a
-                href="https://instagram.com/cafetrefiko"
+                href="https://www.instagram.com/trefiko_/"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="inline-flex items-center gap-2.5 w-fit group"
@@ -364,7 +363,7 @@ onMounted(async () => {
                 <span
                   class="text-sm font-semibold text-slate-600 dark:text-slate-400 group-hover:text-primary transition-colors"
                 >
-                  @cafetrefiko
+                  @trefiko_
                 </span>
               </a>
             </div>

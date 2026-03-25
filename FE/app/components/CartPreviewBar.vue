@@ -216,7 +216,7 @@ watch(hasItems, (val) => {
               "
               class="flex items-center gap-2 bg-primary hover:bg-primary/90 text-slate-900 font-black text-sm px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-primary/30 active:scale-95 whitespace-nowrap"
             >
-              Checkout
+              Bayar
               <ArrowRight :size="15" />
             </NuxtLink>
           </div>

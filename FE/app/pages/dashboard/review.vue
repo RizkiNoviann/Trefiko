@@ -86,9 +86,9 @@ onMounted(fetchReviews);
 
     <main class="flex min-w-0 flex-1 flex-col overflow-hidden">
       <NavAdmin
-        searchPlaceholder="Cari review..."
+        searchPlaceholder="Cari ulasan..."
         userName="Admin"
-        userRole="Cafe Manager"
+        userRole="Pengelola Kafe"
       />
 
       <div class="flex-1 overflow-y-auto px-10 py-8">
@@ -96,7 +96,7 @@ onMounted(fetchReviews);
           <div
             class="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900"
           >
-            <p class="mb-1 text-sm font-medium text-slate-500">Total Review</p>
+            <p class="mb-1 text-sm font-medium text-slate-500">Total Ulasan</p>
             <h3 class="text-3xl font-black text-slate-900 dark:text-slate-100">
               {{ reviews.length }}
             </h3>

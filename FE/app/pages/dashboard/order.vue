@@ -46,6 +46,29 @@ const formatDate = (value: string) => {
   });
 };
 
+const formatPaymentMethod = (order: Order) => {
+  if (order.payment === "COD") {
+    return "COD";
+  }
+
+  const channel = order.paymentChannel?.trim();
+  const type = order.paymentType?.trim();
+
+  if (channel && type) {
+    return `${channel} (${type.replace(/_/g, " ").toUpperCase()})`;
+  }
+
+  if (channel) {
+    return channel;
+  }
+
+  if (type) {
+    return type.replace(/_/g, " ").toUpperCase();
+  }
+
+  return "DIRECT";
+};
+
 const filteredOrders = computed(() =>
   orders.value.filter((order) => order.status === activeTab.value),
 );
@@ -115,7 +138,7 @@ onMounted(fetchOrders);
     <Sidebar :activeMenu="activeMenu" />
 
     <main class="flex min-w-0 flex-1 flex-col overflow-hidden">
-      <NavAdmin searchPlaceholder="Cari kode order atau customer" />
+      <NavAdmin searchPlaceholder="Cari kode pesanan atau nama pelanggan" />
 
       <div class="flex-1 overflow-y-auto p-8">
         <div class="mb-6 flex items-center justify-between gap-4">
@@ -130,7 +153,7 @@ onMounted(fetchOrders);
             @click="fetchOrders"
           >
             <RefreshCcw :size="16" />
-            Refresh
+            Muat Ulang
           </button>
         </div>
 
@@ -218,7 +241,8 @@ onMounted(fetchOrders);
                   {{ formatPrice(order.totalAmount) }}
                 </p>
                 <p class="text-xs text-slate-400">
-                  {{ order.items.length }} item • {{ order.payment }}
+                  {{ order.items.length }} item •
+                  {{ formatPaymentMethod(order) }}
                 </p>
               </div>
             </div>
@@ -227,7 +251,7 @@ onMounted(fetchOrders);
               <p
                 class="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400"
               >
-                Items
+                Item
               </p>
               <div class="space-y-2">
                 <div

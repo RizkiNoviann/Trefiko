@@ -76,11 +76,11 @@ import { Globe, Mail, Phone } from "lucide-vue-next";
         <div class="flex flex-col gap-4 text-slate-400">
           <div class="flex justify-between items-center gap-8">
             <span>Senin - Jumat</span>
-            <span class="whitespace-nowrap">08:00 - 22:00</span>
+            <span class="whitespace-nowrap">07:00 - 22:00</span>
           </div>
           <div class="flex justify-between items-center gap-8">
             <span>Sabtu - Minggu</span>
-            <span class="whitespace-nowrap">07:00 - 23:00</span>
+            <span class="whitespace-nowrap">08:00 - 22:00</span>
           </div>
         </div>
         <div class="p-4 rounded-xl bg-primary/10 border border-primary/20">

@@ -23,14 +23,14 @@ const selectedImageFile = ref<File | null>(null);
 const imagePreview = ref("");
 
 const categoryOptions: Array<{ label: string; value: MenuCategory }> = [
-  { label: "Coffee", value: "COFFEE" },
-  { label: "Non Coffee", value: "NON_COFFEE" },
-  { label: "Snack", value: "SNACK" },
+  { label: "Kopi", value: "COFFEE" },
+  { label: "Non Kopi", value: "NON_COFFEE" },
+  { label: "Camilan", value: "SNACK" },
 ];
 
 const statusOptions = [
-  { label: "Active", value: true },
-  { label: "Hidden", value: false },
+  { label: "Aktif", value: true },
+  { label: "Disembunyikan", value: false },
 ];
 
 const form = ref<MenuPayload>({
@@ -186,14 +186,14 @@ const removeItem = async (id: string) => {
 
 const formatCategory = (category: MenuCategory) => {
   if (category === "NON_COFFEE") {
-    return "Non Coffee";
+    return "Non Kopi";
   }
 
   if (category === "COFFEE") {
-    return "Coffee";
+    return "Kopi";
   }
 
-  return "Snack";
+  return "Camilan";
 };
 
 const formatPrice = (price: number) => {
@@ -213,16 +213,16 @@ onMounted(fetchMenus);
 
     <main class="flex-1 flex flex-col overflow-hidden">
       <NavAdmin
-        searchPlaceholder="Search menu..."
+        searchPlaceholder="Cari menu..."
         userName="Admin Trefiko"
-        userRole="Administrator"
+        userRole="Admin"
       />
 
       <div class="flex-1 overflow-y-auto p-8 w-full">
         <div class="mb-6 flex items-center justify-between">
           <div>
             <h1 class="text-2xl font-black text-slate-900 dark:text-slate-100">
-              Menu Management
+              Manajemen Menu
             </h1>
             <p class="text-sm text-slate-600 dark:text-slate-400">
               Kelola data menu dan favorit.
@@ -233,7 +233,7 @@ onMounted(fetchMenus);
             @click="openCreateModal"
           >
             <Plus class="h-4 w-4" />
-            Add Menu
+            Tambah Menu
           </button>
         </div>
 
@@ -246,7 +246,7 @@ onMounted(fetchMenus);
 
         <div v-if="isLoading" class="flex items-center gap-2 text-slate-500">
           <Loader2 class="h-4 w-4 animate-spin" />
-          Loading menu...
+          Memuat menu...
         </div>
 
         <div
@@ -259,14 +259,14 @@ onMounted(fetchMenus);
                 class="bg-slate-50 text-xs uppercase tracking-wide text-slate-600 dark:bg-slate-800/60 dark:text-slate-300"
               >
                 <tr>
-                  <th class="px-4 py-3">Image</th>
-                  <th class="px-4 py-3">Title</th>
-                  <th class="px-4 py-3">Description</th>
-                  <th class="px-4 py-3">Category</th>
-                  <th class="px-4 py-3">Price</th>
+                  <th class="px-4 py-3">Gambar</th>
+                  <th class="px-4 py-3">Nama</th>
+                  <th class="px-4 py-3">Deskripsi</th>
+                  <th class="px-4 py-3">Kategori</th>
+                  <th class="px-4 py-3">Harga</th>
                   <th class="px-4 py-3">Status</th>
-                  <th class="px-4 py-3">Favorite</th>
-                  <th class="px-4 py-3 text-right">Action</th>
+                  <th class="px-4 py-3">Favorit</th>
+                  <th class="px-4 py-3 text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody class="text-slate-700 dark:text-slate-200">
@@ -299,7 +299,7 @@ onMounted(fetchMenus);
                           : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-300'
                       "
                     >
-                      {{ item.status ? "Active" : "Hidden" }}
+                      {{ item.status ? "Aktif" : "Disembunyikan" }}
                     </span>
                   </td>
                   <td class="px-4 py-3">
@@ -358,10 +358,10 @@ onMounted(fetchMenus);
         >
           <div>
             <h2 class="text-xl font-black text-slate-900 dark:text-slate-100">
-              {{ editingId ? "Edit Menu" : "Tambah Menu" }}
+              {{ editingId ? "Ubah Menu" : "Tambah Menu" }}
             </h2>
             <p class="text-sm text-slate-600 dark:text-slate-400">
-              Upload image, isi title, description, category, price, status, dan
+              Unggah gambar, isi nama, deskripsi, kategori, harga, status, dan
               favorit.
             </p>
           </div>
@@ -380,7 +380,7 @@ onMounted(fetchMenus);
           <label class="md:col-span-2">
             <span
               class="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-200"
-              >Image</span
+              >Gambar</span
             >
             <div
               class="rounded-xl border border-dashed border-slate-300 p-4 dark:border-slate-600"
@@ -412,7 +412,7 @@ onMounted(fetchMenus);
           <label class="md:col-span-2">
             <span
               class="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-200"
-              >Title</span
+              >Nama Menu</span
             >
             <input
               v-model="form.title"
@@ -425,7 +425,7 @@ onMounted(fetchMenus);
           <label class="md:col-span-2">
             <span
               class="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-200"
-              >Description</span
+              >Deskripsi</span
             >
             <textarea
               v-model="form.description"
@@ -438,7 +438,7 @@ onMounted(fetchMenus);
           <label>
             <span
               class="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-200"
-              >Category</span
+              >Kategori</span
             >
             <select
               v-model="form.category"
@@ -457,7 +457,7 @@ onMounted(fetchMenus);
           <label>
             <span
               class="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-200"
-              >Price</span
+              >Harga</span
             >
             <input
               v-model.number="form.price"
@@ -517,7 +517,7 @@ onMounted(fetchMenus);
                 isSubmitting
                   ? "Menyimpan..."
                   : editingId
-                    ? "Update Menu"
+                    ? "Perbarui Menu"
                     : "Tambah Menu"
               }}
             </button>

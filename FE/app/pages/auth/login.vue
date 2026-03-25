@@ -64,10 +64,10 @@ const handleLogin = async () => {
         <h1
           class="text-slate-900 dark:text-slate-100 text-4xl font-black tracking-tight"
         >
-          Welcome Back
+          Selamat Datang Kembali
         </h1>
         <p class="text-slate-600 dark:text-slate-400 text-base">
-          Your daily brew is waiting for you
+          Kopi favoritmu sudah menunggu
         </p>
       </div>
 
@@ -80,12 +80,12 @@ const handleLogin = async () => {
             <span
               class="text-slate-700 dark:text-slate-300 text-sm font-semibold mb-2 block"
             >
-              Name, Email, or Username
+              Nama atau Email
             </span>
             <input
               v-model="identifier"
               class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 text-base transition-all outline-none"
-              placeholder="Admin Trefiko / admin@trefiko.com"
+              placeholder="Masukan Nama atau Email"
               type="text"
               required
             />
@@ -95,12 +95,7 @@ const handleLogin = async () => {
             <div class="flex justify-between items-center mb-2">
               <span
                 class="text-slate-700 dark:text-slate-300 text-sm font-semibold"
-                >Password</span
-              >
-              <a
-                href="#"
-                class="text-primary text-xs font-semibold hover:underline"
-                >Forgot password?</a
+                >Kata Sandi</span
               >
             </div>
             <div class="relative">
@@ -108,7 +103,7 @@ const handleLogin = async () => {
                 :type="showPassword ? 'text' : 'password'"
                 v-model="password"
                 class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 pr-12 text-base transition-all outline-none"
-                placeholder="Enter your password"
+                placeholder="Masukkan kata sandi"
                 required
               />
               <button
@@ -120,6 +115,12 @@ const handleLogin = async () => {
                 <EyeOff v-else :size="20" />
               </button>
             </div>
+
+            <a
+              href="#"
+              class="text-primary text-xs font-semibold hover:underline"
+              >Lupa kata sandi?</a
+            >
           </label>
 
           <p v-if="errorMessage" class="text-sm text-red-500">
@@ -131,18 +132,18 @@ const handleLogin = async () => {
             :disabled="isLoading"
             class="w-full bg-primary hover:bg-primary/90 text-slate-900 font-bold py-3.5 rounded-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.98] disabled:opacity-60"
           >
-            {{ isLoading ? "Loading..." : "Login" }}
+            {{ isLoading ? "Memproses..." : "Masuk" }}
           </button>
         </form>
       </div>
 
       <p class="text-center text-slate-600 dark:text-slate-400 text-sm">
-        Don't have an account?
+        Belum punya akun?
         <NuxtLink
           to="/auth/register"
           class="text-primary font-bold hover:underline ml-1"
         >
-          Create an account
+          Daftar Sekarang
         </NuxtLink>
       </p>
     </div>

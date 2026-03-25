@@ -11,7 +11,7 @@
       <div>
         <h1 class="text-lg font-bold leading-tight">Trefiko Cafe</h1>
         <p class="text-primary text-xs font-semibold uppercase tracking-wider">
-          Admin Panel
+          Panel Admin
         </p>
       </div>
     </div>
@@ -23,7 +23,7 @@
         :class="{ 'bg-primary/20 text-primary': activeMenu === 'dashboard' }"
       >
         <LayoutDashboard class="w-5 h-5" />
-        <span class="text-sm font-medium">Dashboard</span>
+        <span class="text-sm font-medium">Beranda</span>
       </a>
       <a
         href="/dashboard/order"
@@ -31,7 +31,7 @@
         :class="{ 'bg-primary/20 text-primary': activeMenu === 'order' }"
       >
         <ShoppingBag class="w-5 h-5" />
-        <span class="text-sm font-medium">Order Management</span>
+        <span class="text-sm font-medium">Manajemen Pesanan</span>
       </a>
       <a
         href="/dashboard/menu"
@@ -39,7 +39,7 @@
         :class="{ 'bg-primary/20 text-primary': activeMenu === 'menu' }"
       >
         <UtensilsCrossed class="w-5 h-5" />
-        <span class="text-sm font-medium">Menu Management</span>
+        <span class="text-sm font-medium">Manajemen Menu</span>
       </a>
       <a
         href="/dashboard/review"
@@ -47,7 +47,7 @@
         :class="{ 'bg-primary/20 text-primary': activeMenu === 'review' }"
       >
         <Star class="w-5 h-5" />
-        <span class="text-sm font-medium">Review Management</span>
+        <span class="text-sm font-medium">Manajemen Ulasan</span>
       </a>
     </nav>
 
@@ -57,7 +57,7 @@
         @click="handleLogout"
       >
         <LogOut class="w-5 h-5" />
-        <span class="text-sm font-medium">Logout</span>
+        <span class="text-sm font-medium">Keluar</span>
       </button>
     </div>
   </aside>

@@ -83,7 +83,7 @@ useSeoMeta({
       </NuxtLink>
 
       <div v-if="isLoading" class="py-20 text-center text-slate-500">
-        Loading detail menu...
+        Memuat detail menu...
       </div>
 
       <div v-else-if="!menu" class="py-20 text-center text-slate-500">
@@ -121,7 +121,7 @@ useSeoMeta({
         <div
           class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/60"
         >
-          <h2 class="mb-2 text-xl font-bold">Description</h2>
+          <h2 class="mb-2 text-xl font-bold">Deskripsi</h2>
           <p class="leading-relaxed text-slate-600 dark:text-slate-400">
             {{ menu.description }}
           </p>
@@ -130,7 +130,7 @@ useSeoMeta({
         <div class="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
           <!-- Quantity -->
           <div>
-            <h3 class="mb-3 text-lg font-bold">Quantity</h3>
+            <h3 class="mb-3 text-lg font-bold">Jumlah</h3>
             <div
               class="inline-flex items-center gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-2"
             >
@@ -155,7 +155,7 @@ useSeoMeta({
 
           <!-- Temperature -->
           <div v-if="showTemperature">
-            <h3 class="mb-3 text-lg font-bold">Temperature</h3>
+            <h3 class="mb-3 text-lg font-bold">Suhu</h3>
             <div class="flex gap-3">
               <button
                 class="flex-1 rounded-xl border-2 px-4 py-3 text-sm font-bold transition"
@@ -166,7 +166,7 @@ useSeoMeta({
                 "
                 @click="temperature = 'hot'"
               >
-                Hot
+                Panas
               </button>
               <button
                 class="flex-1 rounded-xl border-2 px-4 py-3 text-sm font-bold transition"
@@ -177,7 +177,7 @@ useSeoMeta({
                 "
                 @click="temperature = 'iced'"
               >
-                Iced
+                Dingin
               </button>
             </div>
           </div>
@@ -199,7 +199,7 @@ useSeoMeta({
           to="/auth/login"
           class="mt-8 inline-flex h-14 items-center justify-center rounded-xl bg-primary/15 px-6 text-base font-bold text-slate-900 transition hover:bg-primary/25 dark:text-slate-100"
         >
-          Login untuk order
+          Masuk untuk pesan
         </NuxtLink>
       </div>
     </div>

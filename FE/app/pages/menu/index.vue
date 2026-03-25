@@ -45,14 +45,14 @@ const snackMenus = computed(() => byCategory("SNACK"));
 
 const sections = computed(() => [
   { id: "favorite", title: "Favorit", icon: Heart, items: favoriteMenus.value },
-  { id: "coffee", title: "Coffee", icon: Coffee, items: coffeeMenus.value },
+  { id: "coffee", title: "Kopi", icon: Coffee, items: coffeeMenus.value },
   {
     id: "non-coffee",
-    title: "Non Coffee",
+    title: "Non Kopi",
     icon: CupSoda,
     items: nonCoffeeMenus.value,
   },
-  { id: "snack", title: "Snack", icon: Sandwich, items: snackMenus.value },
+  { id: "snack", title: "Camilan", icon: Sandwich, items: snackMenus.value },
 ]);
 
 const formatPrice = (price: number) =>
@@ -86,7 +86,7 @@ onMounted(fetchMenus);
           Menu Kami
         </h1>
         <p class="max-w-2xl text-lg text-slate-600 dark:text-slate-400">
-          Pilih menu favorit kamu, mulai dari coffee sampai snack.
+          Pilih menu favorit kamu, mulai dari kopi sampai camilan.
         </p>
       </div>
 
@@ -114,7 +114,7 @@ onMounted(fetchMenus);
       </div>
 
       <div v-if="isLoading" class="py-20 text-center text-slate-500">
-        Loading menu...
+        Memuat menu...
       </div>
 
       <!-- Menu items grid -->
@@ -190,14 +190,14 @@ onMounted(fetchMenus);
                   to="/auth/login"
                   class="inline-flex items-center gap-1.5 text-xs font-bold tracking-wide text-slate-500 transition hover:text-primary"
                 >
-                  Login untuk order
+                  Masuk untuk pesan
                 </NuxtLink>
 
                 <NuxtLink
                   :to="`/menu/${item.id}`"
                   class="inline-flex items-center rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:border-primary hover:text-primary dark:border-slate-700 dark:text-slate-300"
                 >
-                  See Detail
+                  Lihat Detail
                 </NuxtLink>
               </div>
             </div>
