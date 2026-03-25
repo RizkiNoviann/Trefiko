@@ -9,6 +9,16 @@ const imageDir = process.env.VERCEL === '1' ? '/tmp/image' : join(process.cwd(),
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const configuredOrigins = (process.env.FRONTEND_URL ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  const allowedOrigins = new Set([
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'https://trefiko.vercel.app',
+    ...configuredOrigins,
+  ]);
 
   if (!existsSync(imageDir)) {
     mkdirSync(imageDir, { recursive: true });
@@ -25,7 +35,31 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: process.env.FRONTEND_URL ?? 'http://localhost:3001',
+    origin: (origin, callback) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      if (allowedOrigins.has(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      try {
+        const hostname = new URL(origin).hostname;
+        if (hostname.endsWith('.vercel.app')) {
+          callback(null, true);
+          return;
+        }
+      }
+      catch {
+        callback(new Error('Not allowed by CORS'));
+        return;
+      }
+
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
   });
 
