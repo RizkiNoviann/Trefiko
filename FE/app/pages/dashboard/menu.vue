@@ -143,26 +143,40 @@ const submitForm = async () => {
   formError.value = "";
 
   try {
-    let imagePath = form.value.image;
-
-    if (selectedImageFile.value) {
-      const uploadResponse = await uploadMenuImage(selectedImageFile.value);
-      imagePath = uploadResponse.image;
-    }
-
-    if (!imagePath) {
-      throw new Error("Silakan pilih image terlebih dahulu");
-    }
-
-    const payload: MenuPayload = {
-      ...form.value,
-      image: imagePath,
-      price: Number(form.value.price),
-    };
-
     if (editingId.value) {
+      const payload: Partial<MenuPayload> = {
+        title: form.value.title,
+        description: form.value.description,
+        category: form.value.category,
+        price: Number(form.value.price),
+        status: form.value.status,
+        favorite: form.value.favorite,
+      };
+
+      if (selectedImageFile.value) {
+        const uploadResponse = await uploadMenuImage(selectedImageFile.value);
+        payload.image = uploadResponse.image;
+      }
+
       await updateMenu(editingId.value, payload);
     } else {
+      let imagePath = form.value.image;
+
+      if (selectedImageFile.value) {
+        const uploadResponse = await uploadMenuImage(selectedImageFile.value);
+        imagePath = uploadResponse.image;
+      }
+
+      if (!imagePath) {
+        throw new Error("Silakan pilih image terlebih dahulu");
+      }
+
+      const payload: MenuPayload = {
+        ...form.value,
+        image: imagePath,
+        price: Number(form.value.price),
+      };
+
       await createMenu(payload);
     }
 
