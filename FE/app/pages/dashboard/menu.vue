@@ -2,6 +2,7 @@
 import { Edit3, Loader2, Plus, Star, Trash2, Upload, X } from "lucide-vue-next";
 import NavAdmin from "~/components/navadmin.vue";
 import Sidebar from "~/components/sidebar.vue";
+import { resolveImageUrl } from "~/composable/useImageUrl";
 import { useMenu } from "~/composable/useMenu";
 import type { MenuCategory, MenuItem, MenuPayload } from "~/types/api";
 
@@ -50,11 +51,7 @@ const toImageUrl = (imagePath: string) => {
     return "";
   }
 
-  if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
-    return imagePath;
-  }
-
-  return `${runtimeConfig.public.apiBaseUrl}${imagePath}`;
+  return resolveImageUrl(imagePath, runtimeConfig.public.apiBaseUrl);
 };
 
 const resetForm = () => {
@@ -116,7 +113,7 @@ const closeModal = () => {
 const onImageChange = (event: Event) => {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0] || null;
-  const maxFileSize = 4 * 1024 * 1024;
+  const maxFileSize = 2 * 1024 * 1024;
 
   if (!file) {
     return;
@@ -130,7 +127,7 @@ const onImageChange = (event: Event) => {
   }
 
   if (file.size > maxFileSize) {
-    formError.value = "Ukuran image maksimal 4MB";
+    formError.value = "Ukuran image maksimal 2MB";
     selectedImageFile.value = null;
     imagePreview.value = "";
     return;

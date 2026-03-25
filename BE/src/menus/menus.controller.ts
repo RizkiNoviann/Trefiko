@@ -13,11 +13,10 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
+import { memoryStorage } from 'multer';
 import { extname } from 'path';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { resolveUploadImageDir } from '../image/upload-dir.util';
 import { CreateMenuDto } from './dto/create-menu.dto';
 import { UpdateMenuDto } from './dto/update-menu.dto';
 import { MenusService } from './menus.service';
@@ -25,6 +24,10 @@ import { MenusService } from './menus.service';
 @Controller('menus')
 export class MenusController {
   constructor(private readonly menusService: MenusService) {}
+
+  private buildInlineImage(file: { mimetype: string; buffer: Buffer }) {
+    return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+  }
 
   @Get()
   findAll() {
@@ -46,25 +49,7 @@ export class MenusController {
   @UseGuards(JwtAuthGuard, AdminGuard)
   @UseInterceptors(
     FileInterceptor('image', {
-      storage: diskStorage({
-        destination: (_req, _file, cb) => {
-          try {
-            cb(null, resolveUploadImageDir());
-          }
-          catch (error) {
-            cb(error as Error, '');
-          }
-        },
-        filename: (_req, file, cb) => {
-          const extension = extname(file.originalname);
-          const baseName = file.originalname
-            .replace(extension, '')
-            .replace(/[^a-zA-Z0-9-_]/g, '-')
-            .toLowerCase();
-          const uniqueName = `${Date.now()}-${baseName}${extension}`;
-          cb(null, uniqueName);
-        },
-      }),
+      storage: memoryStorage(),
       fileFilter: (_req, file, cb) => {
         if (!file.mimetype.startsWith('image/')) {
           cb(new HttpException('Only image file is allowed', HttpStatus.BAD_REQUEST), false);
@@ -74,7 +59,7 @@ export class MenusController {
         cb(null, true);
       },
       limits: {
-        fileSize: 5 * 1024 * 1024,
+        fileSize: 2 * 1024 * 1024,
       },
     }),
   )
@@ -83,10 +68,18 @@ export class MenusController {
       throw new HttpException('Image file is required', HttpStatus.BAD_REQUEST);
     }
 
+    const extension = extname(file.originalname || 'image').toLowerCase();
+    const baseName = (file.originalname || 'menu-image')
+      .replace(extension, '')
+      .replace(/[^a-zA-Z0-9-_]/g, '-')
+      .toLowerCase();
+    const filename = `${Date.now()}-${baseName}${extension || '.jpg'}`;
+    const image = this.buildInlineImage(file);
+
     return {
       message: 'Image uploaded',
-      image: `/images/${file.filename}`,
-      filename: file.filename,
+      image,
+      filename,
     };
   }
 

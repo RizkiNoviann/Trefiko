@@ -9,6 +9,7 @@ import {
 } from "lucide-vue-next";
 import Sidebar from "~/components/sidebar.vue";
 import NavAdmin from "~/components/navadmin.vue";
+import { resolveImageUrl } from "~/composable/useImageUrl";
 import { useOrder } from "~/composable/useOrder";
 import type { AdminOrderStatus, Order } from "~/types/api";
 
@@ -261,7 +262,12 @@ onMounted(fetchOrders);
                 >
                   <div class="flex min-w-0 items-center gap-3">
                     <img
-                      :src="`${config.public.apiBaseUrl}${item.menu.image}`"
+                      :src="
+                        resolveImageUrl(
+                          item.menu.image,
+                          config.public.apiBaseUrl,
+                        )
+                      "
                       :alt="item.menu.title"
                       class="h-11 w-11 rounded-lg object-cover"
                     />

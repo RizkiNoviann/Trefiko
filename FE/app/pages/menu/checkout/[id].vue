@@ -7,6 +7,7 @@ import {
   CreditCard,
   Star,
 } from "lucide-vue-next";
+import { resolveImageUrl } from "~/composable/useImageUrl";
 import { useCart } from "~/composable/useCart";
 import { useOrder } from "~/composable/useOrder";
 import { useReview } from "~/composable/useReview";
@@ -369,7 +370,9 @@ onMounted(() => {
               class="flex items-center gap-4"
             >
               <img
-                :src="`${config.public.apiBaseUrl}${item.menu.image}`"
+                :src="
+                  resolveImageUrl(item.menu.image, config.public.apiBaseUrl)
+                "
                 :alt="item.menu.title"
                 class="size-16 shrink-0 rounded-lg object-cover"
               />

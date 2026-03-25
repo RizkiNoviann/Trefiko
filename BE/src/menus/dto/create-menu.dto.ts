@@ -12,7 +12,7 @@ import {
 export class CreateMenuDto {
   @IsString()
   @IsNotEmpty()
-  @Matches(/^(https?:\/\/.+|\/images\/.+)$/, {
+  @Matches(/^(https?:\/\/.+|\/images\/.+|data:image\/[a-zA-Z0-9.+-]+;base64,.+)$/, {
     message: 'image must be a valid URL or uploaded image path',
   })
   image: string;

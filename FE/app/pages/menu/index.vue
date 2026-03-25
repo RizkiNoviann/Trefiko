@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { Coffee, CupSoda, Heart, Minus, Plus, Sandwich } from "lucide-vue-next";
+import { resolveImageUrl } from "~/composable/useImageUrl";
 import { useMenu } from "~/composable/useMenu";
 import { useCart } from "~/composable/useCart";
 import { useAuth } from "~/composable/useAuth";
@@ -138,7 +139,7 @@ onMounted(fetchMenus);
             class="flex gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/50"
           >
             <img
-              :src="`${config.public.apiBaseUrl}${item.image}`"
+              :src="resolveImageUrl(item.image, config.public.apiBaseUrl)"
               :alt="item.title"
               class="h-24 w-24 shrink-0 rounded-xl object-cover"
             />

@@ -7,6 +7,7 @@ import {
   ChevronUp,
   ChevronDown,
 } from "lucide-vue-next";
+import { resolveImageUrl } from "~/composable/useImageUrl";
 import { useCart } from "~/composable/useCart";
 import { useAuth } from "~/composable/useAuth";
 
@@ -85,7 +86,9 @@ watch(hasItems, (val) => {
                   class="h-12 w-12 rounded-xl overflow-hidden shrink-0 bg-slate-100"
                 >
                   <img
-                    :src="`${config.public.apiBaseUrl}${item.menu.image}`"
+                    :src="
+                      resolveImageUrl(item.menu.image, config.public.apiBaseUrl)
+                    "
                     :alt="item.menu.title"
                     class="h-full w-full object-cover"
                   />
@@ -170,7 +173,9 @@ watch(hasItems, (val) => {
                 :style="`left: ${idx * 22}px; z-index: ${10 - idx}`"
               >
                 <img
-                  :src="`${config.public.apiBaseUrl}${item.menu.image}`"
+                  :src="
+                    resolveImageUrl(item.menu.image, config.public.apiBaseUrl)
+                  "
                   :alt="item.menu.title"
                   class="h-full w-full object-cover"
                 />

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { ArrowLeft, Minus, Plus, ShoppingCart } from "lucide-vue-next";
+import { resolveImageUrl } from "~/composable/useImageUrl";
 import { useMenu } from "~/composable/useMenu";
 import { useCart } from "~/composable/useCart";
 import { useAuth } from "~/composable/useAuth";
@@ -92,7 +93,7 @@ useSeoMeta({
 
       <div v-else>
         <img
-          :src="`${config.public.apiBaseUrl}${menu.image}`"
+          :src="resolveImageUrl(menu.image, config.public.apiBaseUrl)"
           :alt="menu.title"
           class="h-70 w-full rounded-3xl object-cover shadow-xl md:h-105"
         />

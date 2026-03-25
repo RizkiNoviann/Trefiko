@@ -124,6 +124,7 @@ export class OrdersService {
       where: { id: order.id },
       data: {
         status: 'PROCESS',
+        hiddenByUser: false,
         paymentType: paymentStatus.payment_type || null,
         paymentChannel: this.resolvePaymentChannel(paymentStatus),
       },
@@ -140,11 +141,27 @@ export class OrdersService {
     userId: string,
     status?: 'PENDING' | 'PROCESS' | 'COMPLETED',
   ) {
-    const where: Prisma.OrderWhereInput = {
-      userId,
-      hiddenByUser: false,
-      status: status ? status : { in: ['PENDING', 'PROCESS', 'COMPLETED'] },
-    };
+    const where: Prisma.OrderWhereInput = status
+      ? status === 'PENDING'
+        ? {
+            userId,
+            hiddenByUser: false,
+            status: 'PENDING' as const,
+            payment: 'COD' as const,
+          }
+        : {
+            userId,
+            hiddenByUser: false,
+            status,
+          }
+      : {
+          userId,
+          hiddenByUser: false,
+          OR: [
+            { status: { in: ['PROCESS', 'COMPLETED'] } },
+            { status: 'PENDING' as const, payment: 'COD' as const },
+          ],
+        };
 
     const orders = await this.prisma.order.findMany({
       where,
@@ -309,6 +326,7 @@ export class OrdersService {
             note: dto.note?.trim() || null,
             totalAmount,
             status: 'PENDING',
+            hiddenByUser: dto.payment === 'DIRECT',
             items: {
               create: normalizedItems.map((item) => ({
                 menuId: item.menuId,

@@ -7,6 +7,7 @@ import {
   PackageSearch,
   Timer,
 } from "lucide-vue-next";
+import { resolveImageUrl } from "~/composable/useImageUrl";
 import { useOrder } from "~/composable/useOrder";
 import type { Order, UserOrderStatus } from "~/types/api";
 
@@ -25,7 +26,7 @@ const expandedOrders = ref<Set<string>>(new Set());
 const activeTab = ref<UserOrderStatus>("PENDING");
 
 const resolveStatusFromQuery = (
-  statusQuery: string | string[] | undefined,
+  statusQuery: string | Array<string | null> | null | undefined,
 ): UserOrderStatus => {
   const raw = Array.isArray(statusQuery) ? statusQuery[0] : statusQuery;
   const normalized = (raw || "").toUpperCase();
@@ -285,7 +286,9 @@ onMounted(fetchOrders);
             >
               <div class="flex min-w-0 items-center gap-3">
                 <img
-                  :src="`${config.public.apiBaseUrl}${item.menu.image}`"
+                  :src="
+                    resolveImageUrl(item.menu.image, config.public.apiBaseUrl)
+                  "
                   :alt="item.menu.title"
                   class="h-11 w-11 rounded-lg object-cover"
                 />
