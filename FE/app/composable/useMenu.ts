@@ -39,17 +39,30 @@ export function useMenu() {
     const formData = new FormData();
     formData.append('image', file);
 
-    const response = await axios.post<MenuImageUploadResponse>(
-      `${config.public.apiBaseUrl}/menus/upload-image`,
-      formData,
-      {
-        headers: {
-          ...(token.value ? { Authorization: `Bearer ${token.value}` } : {}),
+    try {
+      const response = await axios.post<MenuImageUploadResponse>(
+        `${config.public.apiBaseUrl}/menus/upload-image`,
+        formData,
+        {
+          headers: {
+            ...(token.value ? { Authorization: `Bearer ${token.value}` } : {}),
+          },
+          timeout: 30000,
         },
-      },
-    );
+      );
 
-    return response.data;
+      return response.data;
+    }
+    catch (error: any) {
+      const status = error?.response?.status;
+      const backendMessage = error?.response?.data?.message;
+
+      if (status === 503) {
+        throw new Error('Upload gambar sedang bermasalah di server. Coba ulang beberapa saat lagi.');
+      }
+
+      throw new Error(backendMessage || 'Gagal upload gambar menu');
+    }
   };
 
   return {

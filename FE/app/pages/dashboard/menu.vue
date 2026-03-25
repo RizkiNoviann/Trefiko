@@ -116,6 +116,7 @@ const closeModal = () => {
 const onImageChange = (event: Event) => {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0] || null;
+  const maxFileSize = 4 * 1024 * 1024;
 
   if (!file) {
     return;
@@ -123,6 +124,13 @@ const onImageChange = (event: Event) => {
 
   if (!file.type.startsWith("image/")) {
     formError.value = "File harus berupa image";
+    selectedImageFile.value = null;
+    imagePreview.value = "";
+    return;
+  }
+
+  if (file.size > maxFileSize) {
+    formError.value = "Ukuran image maksimal 4MB";
     selectedImageFile.value = null;
     imagePreview.value = "";
     return;

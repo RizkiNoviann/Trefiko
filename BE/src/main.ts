@@ -1,11 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
 import { AppModule } from './app.module';
-
-const imageDir = process.env.VERCEL === '1' ? '/tmp/image' : join(process.cwd(), 'src', 'image');
+import { resolveUploadImageDir } from './image/upload-dir.util';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -20,11 +17,13 @@ async function bootstrap() {
     ...configuredOrigins,
   ]);
 
-  if (!existsSync(imageDir)) {
-    mkdirSync(imageDir, { recursive: true });
+  try {
+    const imageDir = resolveUploadImageDir();
+    app.useStaticAssets(imageDir, { prefix: '/images/' });
   }
-
-  app.useStaticAssets(imageDir, { prefix: '/images/' });
+  catch (error) {
+    console.warn('Image static directory unavailable:', error);
+  }
 
   app.useGlobalPipes(
     new ValidationPipe({

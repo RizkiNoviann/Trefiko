@@ -13,21 +13,14 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { existsSync, mkdirSync } from 'fs';
 import { diskStorage } from 'multer';
-import { extname, join } from 'path';
+import { extname } from 'path';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { resolveUploadImageDir } from '../image/upload-dir.util';
 import { CreateMenuDto } from './dto/create-menu.dto';
 import { UpdateMenuDto } from './dto/update-menu.dto';
 import { MenusService } from './menus.service';
-
-const uploadImageDir =
-  process.env.VERCEL === '1' ? '/tmp/image' : join(process.cwd(), 'src', 'image');
-
-if (!existsSync(uploadImageDir)) {
-  mkdirSync(uploadImageDir, { recursive: true });
-}
 
 @Controller('menus')
 export class MenusController {
@@ -55,7 +48,12 @@ export class MenusController {
     FileInterceptor('image', {
       storage: diskStorage({
         destination: (_req, _file, cb) => {
-          cb(null, uploadImageDir);
+          try {
+            cb(null, resolveUploadImageDir());
+          }
+          catch (error) {
+            cb(error as Error, '');
+          }
         },
         filename: (_req, file, cb) => {
           const extension = extname(file.originalname);
