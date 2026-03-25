@@ -18,6 +18,7 @@ const reviewComments = [
 
 async function main() {
   const password = await hash('password123', 10);
+  const localAdminPasswordHash = '$2b$10$6/3DlB6ULQz0som3G61o2u87lAbF42LvJjANs94bScgnXt7wBozL6';
 
   await prisma.user.deleteMany({
     where: { email: 'cashier@trefiko.com' },
@@ -26,13 +27,18 @@ async function main() {
   await prisma.user.upsert({
     where: { email: 'admin@trefiko.com' },
     update: {
+      id: 'cmmw3kekv0000ejq4jlitm03s',
+      name: 'Admin Trefiko',
+      username: 'admin',
+      password: localAdminPasswordHash,
       role: 'ADMIN',
     },
     create: {
+      id: 'cmmw3kekv0000ejq4jlitm03s',
       name: 'Admin Trefiko',
       email: 'admin@trefiko.com',
       username: 'admin',
-      password,
+      password: localAdminPasswordHash,
       role: 'ADMIN',
     },
   });
