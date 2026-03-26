@@ -38,6 +38,8 @@ const hasMoreReviews = ref(true);
 const isLoadingReviews = ref(false);
 const reviewErrorMessage = ref("");
 const currentStartIndex = ref(0);
+const leftButtonHover = ref(false);
+const rightButtonHover = ref(false);
 
 const normalizedStartIndex = computed(() => {
   const total = reviews.value.length;
@@ -467,8 +469,11 @@ onMounted(async () => {
             "
             :disabled="!canNavigate"
             @click="goPrevReview"
+            @mouseenter="leftButtonHover = true"
+            @mouseleave="leftButtonHover = false"
           >
-            <ChevronLeft :size="20" />
+            <ChevronLeft v-if="!leftButtonHover" :size="20" />
+            <ChevronRight v-else :size="20" />
           </button>
           <button
             class="w-12 h-12 rounded-full flex items-center justify-center transition-colors"
@@ -479,8 +484,11 @@ onMounted(async () => {
             "
             :disabled="!canNavigate"
             @click="goNextReview"
+            @mouseenter="rightButtonHover = true"
+            @mouseleave="rightButtonHover = false"
           >
-            <ChevronRight :size="20" />
+            <ChevronLeft v-if="!rightButtonHover" :size="20" />
+            <ChevronRight v-else :size="20" />
           </button>
         </div>
       </div>

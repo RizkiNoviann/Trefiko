@@ -180,8 +180,19 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- Login Button (when not authenticated) -->
+        <!-- Dark Mode Toggle + Login Button (when not authenticated) -->
         <template v-if="!isAuthenticated">
+          <button
+            class="hidden md:flex h-10 w-10 items-center justify-center rounded-xl hover:bg-primary/10 transition-all"
+            @click="toggleTheme"
+            :title="isDarkMode ? 'Mode Terang' : 'Mode Gelap'"
+          >
+            <component
+              :is="isDarkMode ? Sun : Moon"
+              :size="20"
+              class="text-slate-900 dark:text-slate-100"
+            />
+          </button>
           <NuxtLink
             :to="accountPath"
             class="flex h-10 px-4 items-center gap-2 rounded-xl bg-primary text-background-dark hover:shadow-lg hover:shadow-primary/20 transition-all font-semibold text-sm"
@@ -256,15 +267,14 @@ onBeforeUnmount(() => {
         >
           Ulasan
         </button>
-        <NuxtLink
-          v-if="isAuthenticated"
-          to="/chart"
-          class="px-3 py-3 rounded-lg text-sm font-semibold hover:bg-primary/10 hover:text-primary transition-all"
-          :class="route.path === '/chart' ? 'text-primary bg-primary/5' : ''"
-          @click="closeMobileMenu"
+        <hr class="my-2 border-slate-200 dark:border-slate-700" />
+        <button
+          class="w-full px-3 py-3 rounded-lg text-sm font-semibold hover:bg-primary/10 hover:text-primary transition-all text-left flex items-center gap-3"
+          @click="toggleTheme"
         >
-          Keranjang
-        </NuxtLink>
+          <component :is="isDarkMode ? Sun : Moon" :size="18" />
+          {{ isDarkMode ? "Mode Terang" : "Mode Gelap" }}
+        </button>
         <button
           v-if="isAuthenticated"
           @click="handleLogout"
