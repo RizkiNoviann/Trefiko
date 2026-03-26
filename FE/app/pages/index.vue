@@ -38,8 +38,6 @@ const hasMoreReviews = ref(true);
 const isLoadingReviews = ref(false);
 const reviewErrorMessage = ref("");
 const currentStartIndex = ref(0);
-const leftButtonHover = ref(false);
-const rightButtonHover = ref(false);
 
 const normalizedStartIndex = computed(() => {
   const total = reviews.value.length;
@@ -461,34 +459,28 @@ onMounted(async () => {
         </div>
         <div class="flex gap-2">
           <button
-            class="w-12 h-12 rounded-full border border-primary/20 flex items-center justify-center transition-colors"
+            class="w-12 h-12 rounded-full border border-primary text-primary flex items-center justify-center transition-all"
             :class="
               canNavigate
-                ? 'hover:bg-primary/10'
+                ? 'hover:bg-primary hover:text-background-dark'
                 : 'cursor-not-allowed opacity-40'
             "
             :disabled="!canNavigate"
             @click="goPrevReview"
-            @mouseenter="leftButtonHover = true"
-            @mouseleave="leftButtonHover = false"
           >
-            <ChevronLeft v-if="!leftButtonHover" :size="20" />
-            <ChevronRight v-else :size="20" />
+            <ChevronLeft :size="20" />
           </button>
           <button
-            class="w-12 h-12 rounded-full flex items-center justify-center transition-colors"
+            class="w-12 h-12 rounded-full border border-primary text-primary flex items-center justify-center transition-all"
             :class="
               canNavigate
-                ? 'bg-primary text-background-dark shadow-lg shadow-primary/20'
-                : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                ? 'hover:bg-primary hover:text-background-dark'
+                : 'cursor-not-allowed opacity-40'
             "
             :disabled="!canNavigate"
             @click="goNextReview"
-            @mouseenter="rightButtonHover = true"
-            @mouseleave="rightButtonHover = false"
           >
-            <ChevronLeft v-if="!rightButtonHover" :size="20" />
-            <ChevronRight v-else :size="20" />
+            <ChevronRight :size="20" />
           </button>
         </div>
       </div>
